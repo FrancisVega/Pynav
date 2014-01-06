@@ -253,6 +253,7 @@ def makePrevizNav(settings, userSettings):
 					os.remove(content)
 
 		# File by file
+		startConvertFile = time.clock()
 		for i in range(filesToConvert):
 
 			inFile = sourceImagesFullPath[i]+'[0]' # add [0] to flatten psds for convert app
@@ -269,33 +270,28 @@ def makePrevizNav(settings, userSettings):
 				print msg
 				logText_c += msg+"\n"
 
-			# Ok, go to write some files
 			else:
 
-				# Si hemos indicado --mobile cambiamos la plantilla a mobile.html
+				# Select correct HTML Sheet
 				if settings["mobile"] == True:
 					Convert_HTML_sheet = settings["mobileSheet"]
 				else:
-					Convert_HTML_sheet = settings["desktopSheet"]							
-				
-				# Procesamos los archivos.
-				startConvertFile = time.clock()
+					Convert_HTML_sheet = settings["desktopSheet"]				
 
 				# Create a temp directory
 				tmp = "%s/previz_temp" % settings["destinationPath"]
 				if not os.path.exists(tmp):
 					os.makedirs(tmp)
 
-				# creamos un jpg low qualy para ver el alto
+				# Creates a low quality jpg to grab width and height
+				# to do: Create the temporal forlder just in case of --mobile
 				subprocess.call( [userSettings["convert_app"], '-quality', '1', inFile, "%s/.__temp_previz.jpg" % tmp ], shell=False )
 				width = str(get_image_size("%s/.__temp_previz.jpg" % tmp)[0])
 				height = str(get_image_size("%s/.__temp_previz.jpg" % tmp)[1])
 
-				# import math
 				import math
 				nSlices = int(math.ceil(float(height)/float(settings["sliceSize"])))
 				
-				imgTag = ""
 				imgTag2 = []
 				for slcs in range(nSlices):
 					if int(settings["sliceSize"]) > float(height)-(slcs*float(settings["sliceSize"])):
@@ -321,12 +317,10 @@ def makePrevizNav(settings, userSettings):
 						shell=False
 					)
 
-					# generate html img tag to includo into html file
-					#imgTag += "\t\t\t<img src=\"%s\">\n" % os.path.basename(ofile)	
-					imgTag += os.path.basename(ofile)
+					# generate html img tag to include into html file
 					imgTag2.append(os.path.basename(ofile))
 
-				# If only wants images
+				# If only wants images == False
 				if settings["onlyimage"] == False:
 					# Creates html file
 					htmlFile = htmlsFullPath[i]
@@ -339,7 +333,6 @@ def makePrevizNav(settings, userSettings):
 
 					# replace custom tags
 					tags = Convert_HTML_sheet
-
 					tags = tags.replace("[pynav-title]", settings["title"])
 					tags = tags.replace("[pynav-css]", customCss)
 					tags = tags.replace("[pynav-img-width]", width)
@@ -386,13 +379,63 @@ def makePrevizNav(settings, userSettings):
 
 				fileConverted = fileConverted+1
 
-			indexHTML += "\t<li><a href='%s'>%s</a></li>\n" % (os.path.basename(htmlsFullPath[i]), os.path.basename(outFile)[:-4])
+			indexHTML += "<li><a href='%s'>%s</a></li>\n" % (os.path.basename(htmlsFullPath[i]), os.path.basename(outFile)[:-4])
 		
 		
 		indexHTML = "\
-<!--\
-\n\n\tPynav 2014\
-\n\tFrancis Vega\n\n\thisco@inartx.com\n\n-->\n\n<!DOCTYPE html>\n<html>\n<head>\n<title>Index of "+ settings["title"] +"</title>\n<style>\n\ta:visited{color: inherit;}\n\ta{color: black; text-decoration: none}\n\ta:hover{color: black; font-weight: bold;}\n\th1{margin: 20px 0 0 20px;}\n\tli{line-height: 1.6; }\n\tul{list-style: none; margin: 20px 0 0 20px;}\n\t*{font-family: Arial; border: 0; margin: 0; padding:0;}\n" + customCss + "</style>\n</head>\n<h1>Index of "+ settings["title"] +"</h1>\n<ul>\n%s</ul>\n</body>\n</html>" % indexHTML
+\n<!--\
+\n\
+\n	Pynav 2014\
+\n	Francis Vega\
+\n\
+\n	hisco@inartx.com\
+\n-->\
+\n\
+\n<!DOCTYPE html>\
+\n	<html>\
+\n	<head>\
+\n		<title>Index of "+ settings["title"] +"</title>\
+\n		<style>\
+\n			a {\
+\n				color: black;\
+\n				text-decoration: none\
+\n			}\
+\n			a:visited {\
+\n				color: inherit;\
+\n			}\
+\n			a:hover {\
+\n				color: black;\
+\n				font-weight: bold;\
+\n			}\
+\n\
+\n			h1 {\
+\n				margin: 20px 0 0 20px;\
+\n			}\
+\n\
+\n			li {\
+\n				line-height: 1.6;\
+\n			}\
+\n\
+\n			ul {\
+\n				list-style: none;\
+\n				margin: 20px 0 0 20px;\
+\n			}\
+\n\
+\n			*{\
+\n				font-family: Arial;\
+\n				border: 0;\
+\n				margin: 0;\
+\n				padding: 0;\
+\n			}\
+\n			" + customCss + "\
+\n		</style>\
+\n	</head>\
+\n	<h1>Index of "+ settings["title"] + "</h1>\
+\n	<ul>\
+\n	%s\
+\n	</ul>\
+\n	</body>\
+\n	</html>" % indexHTML
 
 	except KeyboardInterrupt:
 		logText_e += "\n"
@@ -415,7 +458,6 @@ def makePrevizNav(settings, userSettings):
 	# POST PROCESS
 
 	if settings["logfile"]:
-		# print "Created logfile at %s/pynavlog.txt" % settings["destinationPath"]
 		log = open("%s/pynavlog.txt" % settings["destinationPath"], "w")
 		log.write(logText_a + logText_b + logText_c + logText_d + logText_e + logText_f + "\n" + settings["date"].replace("_", "/"))
 		log.close()
@@ -622,8 +664,6 @@ if settings["html"]:
 	else:
 		print "\nError. No existe el archivo html %s" % settings["html"]
 		sys.exit()
-else:
-	print "no se ha indicado html"
 
 # Go with the flow!!
 makePrevizNav(settings, userSettings)
