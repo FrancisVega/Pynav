@@ -1,32 +1,41 @@
 Pynav
+==============
 
 
-Introducción
 
-¿Qué es Pynav?
+<b>¿Qué es Pynav?
+
 Pynav es un script escrito en python que se ejecuta en el terminal del sistema osx, windows o linux. No, aun no tiene GUI.
 
-¿Para qué sirve Pynav?
+<b>¿Para qué sirve Pynav?
+
 Su uso más común es convertir una lista de imágenes contenidas en un directorio —psd, png y jpg entre otros—, en archivos html con esas mismas imágenes embebidas, para ser vistas en un navegador de una forma sencilla (en monitor o móvil) haciendo click/tab en cada imagen.
 
-¿Y para eso un script?
+<b>¿Y para eso un script?
+
 Se llama Pynav y si no te gusta no mires.
 
-Vale, ¿hace algo más?
+<b>Vale, ¿hace algo más?
+
 No mucho más, aunque ahora veremos las opciones de Pynav con lo que es posible hacerse una idea de algunas cosas más que nos permite hacer cuando creamos los htmls.
 
+<b>¿Necesito algo más a parte de Pynav?
 
-Usando Pynav
+Sí, necesitas tener instalado imagemagick, si usas Photoshop CC 14.1.2 viene instalado. Si no te lo pudes bajar de <a href="www.imagemagick.org">imagemagick.org</a>
+
+
+<b>Usando Pynav
+==============
 
 Pynav se usa en consola así que toca abrir un terminal y escribir. Si escribirmos lo siguiente obtendremos un listado de las opciones que nos permite Pynav:
 
-pynav -h
+<b>pynav -h
 
 Se puede empezar a usar Pynav muy rápidamente y sin escribir poco más que el nombre del propio programa y la ruta donde tenemos nuestros psds.
 
 Antes de entrar en las opciones veamos un ejemplo (caso hipotético) que puede ser el uso más común.
 
-pynav c:\proyectos\web\Yates-HC
+<b>pynav c:\proyectos\web\Yates-HC
 
 Si introducimos eso en el terminal y pulsamos enter, Pynav creará una presentación de los archivos .psds que existan en c:\proyectos\web\Yates-HC en el directorio c:\proyectos\web\Yates-HC\Pynav-2014-01-05 con formato html y jpg
 
@@ -51,67 +60,104 @@ Pynav [parámetros] directorio/de/origen [directorio/de/destino]
 
 Otra opción válida es poner todos los parámetros al final
 Pynav directorio/de/origen [directorio/de/destino] [parámetros]
+
+
 Parámetros
+==============
 
 Todos los parámetros tienen dos versiones, la larga que se escribe con -- delante y la forma corta que se escribe poniendo - delante
 
+
 Por ejemplo para asignar una calidad de 50 podemos escribir --quality 50 o -q 50
 
--h, --help
+
+<b>-h, --help
+
 Muestra los parámetros y el uso de Pynav en el terminal
 
--if, --if-format [psd]
+
+<b>-if, --if-format [psd]
+
 Uso: -if png
 Establece el formato de imagen que Pynav va a buscar
 
--of, --out-format [jpg]
+
+<b>-of, --out-format [jpg]
+
 Uso: -of png
 Establece el formato de imagen de la presentación
 
--t, --title [Pynav]
+
+<b>-t, --title [Pynav]
+
 Uso: -t “My Title”
 Establece el título de la presentación. Este título se usa en los <title> de los htmls y en la página de índice
 
--fn, --file-name
+
+<b>-fn, --file-name
+
 Uso: -fn “My_Custom_Name”
 Establece un nombre común para los archivos de la presentación. Si por ejemplo especificamos --file-name “web-pre” los archivos se llamarán “web-pre_001”, “web-pre_002”, “web-pre_003”, etc...
 
--q, --quality [100]
+
+<b>-q, --quality [100]
+
 Uso: -q 75
 Establece la calidad de compresión de los jpgs en un intervalo de [0-100] 0 Es el peor 100 es el mejor
 
--ow, --overwrite
+
+<b>-ow, --overwrite
+
 Sobreescribe los archivos de la presentación si encuentra alguno con el mismo nombre
 
 
--v, --verbose
+<b>-v, --verbose
+
 Obtenemos más información del proceso en el terminal
 
--fp, --full-path
+
+<b>-fp, --full-path
+
 Muestra las rutas completas en el terminal en el proceso
 
--l, --log-file
+
+<b>-l, --log-file
+
 Crea un archivo pynav.log de texto donde podremos ver los detalles de la conversión
 
--index, --index-of-page
+
+<b>-index, --index-of-page
+
 Crea un archivo index.html con enlaces a todas las páginas de la presentación a modo de índice
 
--image, --only-image
+
+<b>-image, --only-image
+
 Crea solo imágenes en la presentación, presncindiendo de los html.
 
--m, --mobile
+
+<b>-m, --mobile
+
 Crea archivos htmls con otro contenido para que se visualice la presentación correctamente en los dispositivos móviles
 
--slc, --slice  |  default: 4096
+
+<b>-slc, --slice  |  default: 4096
+
 Uso: -slc 5000
 Establece el alto en pixels que Pynav usará para cortar en trozos las imágenes cuando hagamos presentaciones para los móviles. Esto es útil debido a las limitaciones de algunos navegadores móviles al mostrar imágenes muy garndes
 
--style, --css-style
+
+<b>-style, --css-style
+
 Uso: -style “body { background: #F2F2F2; } ul{ margin: 0; } ”
 Añade a los archivos html el css que pongamos, podemos usar múltiples css.
 
--z, --zip
+
+<b>-z, --zip
+
 Crea un archivo .zip con la presentación en el directorio de la misma
 
--f, --flush
+
+<b>-f, --flush
+
 Borra todo el contenido de la carpeta de desitono antes de hacer la conversión (para una presentación limpia)
