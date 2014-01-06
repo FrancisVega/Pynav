@@ -79,30 +79,35 @@ Muestra los parámetros y el uso de Pynav en el terminal
 <b>-if, --if-format [psd]
 
 Uso: -if png
+
 Establece el formato de imagen que Pynav va a buscar
 
 
 <b>-of, --out-format [jpg]
 
 Uso: -of png
+
 Establece el formato de imagen de la presentación
 
 
 <b>-t, --title [Pynav]
 
 Uso: -t “My Title”
+
 Establece el título de la presentación. Este título se usa en los <title> de los htmls y en la página de índice
 
 
 <b>-fn, --file-name
 
 Uso: -fn “My_Custom_Name”
+
 Establece un nombre común para los archivos de la presentación. Si por ejemplo especificamos --file-name “web-pre” los archivos se llamarán “web-pre_001”, “web-pre_002”, “web-pre_003”, etc...
 
 
 <b>-q, --quality [100]
 
 Uso: -q 75
+
 Establece la calidad de compresión de los jpgs en un intervalo de [0-100] 0 Es el peor 100 es el mejor
 
 
@@ -144,6 +149,7 @@ Crea archivos htmls con otro contenido para que se visualice la presentación co
 <b>-slc, --slice  |  default: 4096
 
 Uso: -slc 5000
+
 Establece el alto en pixels que Pynav usará para cortar en trozos las imágenes cuando hagamos presentaciones para los móviles. Esto es útil debido a las limitaciones de algunos navegadores móviles al mostrar imágenes muy garndes
 
 
