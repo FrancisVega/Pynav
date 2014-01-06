@@ -47,7 +47,7 @@ Estos valores los podemos cambiar escribiendo unos nuevos en la línea de comand
 
 Veamos el mismo ejemplo añadiendo algunos valores en el comando
 
-pynav -if png -of jpg -q 75 c:\proyectos\web\Yates-HC c:\web\prev1
+<b>pynav -if png -of jpg -q 75 c:\proyectos\web\Yates-HC c:\web\prev1
 
 Lo que haría ahora Pynav es buscar en el directorio c:\proyectos\web\Yates-HC archivos png, guardará la presentación en c:\web\prev1 y los jpgs de la misma tendrán una calidad de compresión de 75 (sobre 100)
 
@@ -56,7 +56,7 @@ Cómo se ejecuta Pynav
 
 Antes de comenzar veamos qué estructura ideal tiene Pynav a la hora de escribir el comando sabiendo que el único requisito es poner el directorio que contiene nuestro archivos originales.
 
-Pynav [parámetros] directorio/de/origen [directorio/de/destino]
+<b>Pynav [parámetros] directorio/de/origen [directorio/de/destino]
 
 Otra opción válida es poner todos los parámetros al final
 Pynav directorio/de/origen [directorio/de/destino] [parámetros]
