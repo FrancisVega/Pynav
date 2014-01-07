@@ -532,11 +532,11 @@ mobileSheet = "\
 \n</html>"
 
 # Load file sheets
-if os.path.isfile('desktop.html'):
-	desktopSheet = loadSheets('pynav-desktop.html')
+if os.path.isfile('pynav-conf/pynav-desktop.html'):
+	desktopSheet = loadSheets('pynav-conf/pynav-desktop.html')
 
-if os.path.isfile('mobile.html'):
-	mobileSheet = loadSheets('pynav-mobile.html')
+if os.path.isfile('pynav-conf/pynav-mobile.html'):
+	mobileSheet = loadSheets('pynav-conf/pynav-mobile.html')
 
 #
 #	Start the dance!
