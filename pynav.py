@@ -39,18 +39,28 @@ import struct
 import json
 
 #
+#	Vars
+#
+
+SCRIPT_FILE_PATH = os.path.realpath(__file__)
+SCRIPT_DIR_PATH = os.path.dirname(SCRIPT_FILE_PATH)
+CONFIG_FILE_PATH = "%s/pynav-conf/pynav.conf" % SCRIPT_DIR_PATH
+CONFIG_DIR_PATH = "%s/pynav-conf" % SCRIPT_DIR_PATH
+
+#
 #	Functions
 #
 
 def loadSettings(settingDic):
 	""" Loads into settingDic the settings found in the config file """
-	pynavConfigFile = "pynav-conf/pynav.conf"
+	pynavConfigFile = "%s/pynav-conf/pynav.conf" % SCRIPT_DIR_PATH
 	if os.path.isfile(pynavConfigFile):
 		confFile = open(pynavConfigFile, 'r')
 		jsonConfFile = json.load(confFile)
 		confFile.close()
 		for key in jsonConfFile["userSettings"].keys():
 			settingDic[key] = jsonConfFile["userSettings"][key]
+
 
 def loadSheets(sheetFile):
 	""" Returns a string with the content o file """
@@ -279,7 +289,6 @@ def makePrevizNav(settings, userSettings):
 				else:
 					msg = "%03d%% ... %s (Skip)" % ((float((100.0/filesToConvert))*(i+1)), os.path.basename(inFile)[:-3])
 				print msg
-				logText_c += msg+"\n"
 			else:
 				# Select correct HTML Sheet
 				if settings["mobile"] == True:
@@ -471,13 +480,16 @@ def makePrevizNav(settings, userSettings):
 # html sheets
 #
 
-desktopSheet ="\
+try:
+	desktopSheet = loadSheets("%s/pynav-desktop.html" % CONFIG_DIR_PATH)
+except:
+	desktopSheet ="\
 \n<!DOCTYPE html>\
 \n<html>\
 \n	<head>\
 \n	<title>[pynav-title]</title>\
 \n	<style>\
-\n		/* Pynav default style*/\
+\n		/* Pynav default style */\
 \n		* {\
 \n			padding:0;\
 \n			margin:0;\
@@ -496,14 +508,16 @@ desktopSheet ="\
 \n	</body>\
 \n</html>"
 
-
-mobileSheet = "\
+try:
+	mobileSheet = loadSheets("%s/pynav-mobile.html" % CONFIG_DIR_PATH)
+except:
+	mobileSheet = "\
 \n<!DOCTYPE html>\
 \n<html>\
 \n	<head>\
 \n	<title>[pynav-title]</title>\
 \n	<style>\
-\n		/* Pynav default style*/\
+\n		/* Pynav default style */\
 \n		* {\
 \n			padding:0;\
 \n			margin:0;\
@@ -528,13 +542,6 @@ mobileSheet = "\
 \n	</body>\
 \n</html>"
 
-# Load file sheets
-if os.path.isfile('desktop.html'):
-	desktopSheet = loadSheets('pynav-desktop.html')
-
-if os.path.isfile('mobile.html'):
-	mobileSheet = loadSheets('pynav-mobile.html')
-
 #
 #	Start the dance!
 #
@@ -547,7 +554,7 @@ userSettings = {
 	"default_outputFormat": "jpg",
 	"default_outputDirName": "Pynav_",
 	"default_quality": [100],
-	"default_sliceSize": [1024]
+	"default_sliceSize": [1034]
 }
 
 # Load settings from pynav.conf
