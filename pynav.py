@@ -96,10 +96,11 @@ def shift(seq, n):
 	n = n % len(seq)
 	return seq[n:] + seq[:n]
 
-def get_image_size(fname):
+def getImageSize(fname):
 	""" Determines the image type of fhandle and return its size """
 	fhandle = open(fname, 'rb')
 	head = fhandle.read(24)
+
 	if len(head) != 24:
 		return
 	if imghdr.what(fname) == 'png':
@@ -128,6 +129,19 @@ def get_image_size(fname):
 			return
 	else:
 		return
+
+	return width, height
+
+def getPsdSize(fname):
+	""" Determines size of psd """
+	error = ""
+	fhandle = open(fname, 'rb')
+	fhandle.read(14)
+	(height, width) = struct.unpack("!LL", fhandle.read(8))
+	if width == 0 and height == 0:
+		error = "no error"
+
+	fhandle.close()
 	return width, height
 
 def getListDir(path):
@@ -207,24 +221,20 @@ def makePrevizNav(settings, userSettings):
 	# previz <a href> target htmls
 	tarHtmlsFullPath = shift(htmlsFullPath, 1)
 	
-	# Logs text vars for log file
-	logText_a, logText_b, logText_c, logText_d, logText_e, logText_f = "", "", "", "", "", ""
+	#
 	indexHTML = ""
 
 	# Starts processing
-	logText_a += "\n"
-	logText_a += "Pynav. Francis Vega 2014\n"
-	logText_a += "Simple Navigation html+image from image files\n"
-	logText_a += "\n"
-	print logText_a
+	print "Pynav. Francis Vega 2014\n"
+	print "Simple Navigation html+image from image files\n"
+	print "\n"
 	
 	# Verbose MODDE
 	if settings["verbose"]:
-		logText_b += "Convert formats: %s to %s\n" % (settings["inputFormat"], settings["outputFormat"])
-		logText_b += "Source Path [%s]\n" % (settings["sourcePath"])
-		logText_b += "Destination Path [%s]\n" % (settings["destinationPath"])
-		logText_b += "\n"
-		print logText_b
+		print "Convert formats: %s to %s\n" % (settings["inputFormat"], settings["outputFormat"])
+		print "Source Path [%s]\n" % (settings["sourcePath"])
+		print "Destination Path [%s]\n" % (settings["destinationPath"])
+		print "\n"
 
 	try:
 		fileConverted = 0
@@ -233,7 +243,8 @@ def makePrevizNav(settings, userSettings):
 		# Custom css style command
 		if len(settings["css"]) > 0:
 			pattern = re.compile(r'\s+')
-			customCss = re.sub(pattern, '', settings["css"])
+			customCss = settings["css"]
+			# customCss = re.sub(pattern, '', settings["css"])
 			customCss = customCss.split("}")[:-1]
 			customCss = [((("\t\t%s}"%settings["css"]).replace("{", " {\n\t\t\t")).replace(";",";\n\t\t\t")).replace("\n\t\t\t}","\n\t\t}") for settings["css"] in customCss]
 			customCss = "".join(customCss)
@@ -269,30 +280,26 @@ def makePrevizNav(settings, userSettings):
 					msg = "%03d%% ... %s (Skip)" % ((float((100.0/filesToConvert))*(i+1)), os.path.basename(inFile)[:-3])
 				print msg
 				logText_c += msg+"\n"
-
 			else:
-
 				# Select correct HTML Sheet
 				if settings["mobile"] == True:
 					Convert_HTML_sheet = settings["mobileSheet"]
 				else:
-					Convert_HTML_sheet = settings["desktopSheet"]				
+					Convert_HTML_sheet = settings["desktopSheet"]
 
-				# Create a temp directory
-				tmp = "%s/previz_temp" % settings["destinationPath"]
-				if not os.path.exists(tmp):
-					os.makedirs(tmp)
-
-				# Creates a low quality jpg to grab width and height
-				# to do: Create the temporal forlder just in case of --mobile
-				subprocess.call( [userSettings["convert_app"], '-quality', '1', inFile, "%s/.__temp_previz.jpg" % tmp ], shell=False )
-				width = str(get_image_size("%s/.__temp_previz.jpg" % tmp)[0])
-				height = str(get_image_size("%s/.__temp_previz.jpg" % tmp)[1])
+				# Get image or psd size
+				if settings["inputFormat"] == "psd":
+					size = getPsdSize(inFile[:-3])
+				else:
+					size = getImageSize(inFile)
+				
+				width = str(size[0])
+				height = str(size[1])
 
 				import math
 				nSlices = int(math.ceil(float(height)/float(settings["sliceSize"])))
 				
-				imgTag2 = []
+				imgTag = []
 				for slcs in range(nSlices):
 					if int(settings["sliceSize"]) > float(height)-(slcs*float(settings["sliceSize"])):
 						newSliceSize = float(height)-(slcs*float(settings["sliceSize"]))
@@ -318,7 +325,7 @@ def makePrevizNav(settings, userSettings):
 					)
 
 					# generate html img tag to include into html file
-					imgTag2.append(os.path.basename(ofile))
+					imgTag.append(os.path.basename(ofile))
 
 				# If only wants images == False
 				if settings["onlyimage"] == False:
@@ -339,11 +346,11 @@ def makePrevizNav(settings, userSettings):
 					tags = tags.replace("[pynav-img-height]", height)
 					tags = tags.replace("[pynav-next-html]", nextHtmlFile)			
 
-					tags = tags.replace("[pynav-img]", imgTag2[0])
+					tags = tags.replace("[pynav-img]", imgTag[0])
 					
 					if nSlices > 1:
-						for i in range(nSlices-1):
-							tags = tags.replace("[pynav-img-slice-%s]" % str(i+1), imgTag2[i+1])
+						for j in range(nSlices-1):
+							tags = tags.replace("[pynav-img-slice-%s]" % str(j+1), imgTag[j+1])
 					
 					html.write(tags)
 					html.close()
@@ -371,11 +378,9 @@ def makePrevizNav(settings, userSettings):
 					elapsedConvert = (time.clock() - startConvertFile)
 					msg = "%03d%% Converting %s to %s @ quality %s (OK) %s secs" % ((float((100.0/filesToConvert))*(i+1)), inFile, outFile, str(settings["quality"]), round(elapsedConvert,2))
 					print msg
-					logText_d += msg+"\n"
 				else:
 					msg = "%03d%% ... %s (OK)" % ((float((100.0/filesToConvert))*(i+1)), inFile)
 					print msg
-					logText_d += msg+"\n"
 
 				fileConverted = fileConverted+1
 
@@ -438,16 +443,14 @@ def makePrevizNav(settings, userSettings):
 \n	</html>" % indexHTML
 
 	except KeyboardInterrupt:
-		logText_e += "\n"
-		logText_e += "Interrupted by a Motherfucker ;)\n"
-		print logText_e
+		print "\n"
+		print "Interrupted by a Motherfucker ;)\n"
 
 	import math
 	elapsed = (time.clock() - start)
-	logText_f += "\n"
-	logText_f += "%s files converted in %s seconds\n" % (str(fileConverted), str(round(elapsed,2)))
-	logText_f += "Mockup finished at [%s]\n" % settings["destinationPath"]
-	print logText_f
+	print "\n"
+	print "%s files converted in %s seconds\n" % (str(fileConverted), str(round(elapsed,2)))
+	print "Mockup finished at [%s]\n" % settings["destinationPath"]
 
 	# Removes the temporal folder
 	try:
@@ -456,12 +459,6 @@ def makePrevizNav(settings, userSettings):
 		pass
 
 	# POST PROCESS
-
-	if settings["logfile"]:
-		log = open("%s/pynavlog.txt" % settings["destinationPath"], "w")
-		log.write(logText_a + logText_b + logText_c + logText_d + logText_e + logText_f + "\n" + settings["date"].replace("_", "/"))
-		log.close()
-
 	if settings["index"]:
 		idx = open("%s/index.html" % settings["destinationPath"], "w")
 		idx.write(indexHTML)
@@ -532,11 +529,11 @@ mobileSheet = "\
 \n</html>"
 
 # Load file sheets
-if os.path.isfile('pynav-conf/pynav-desktop.html'):
-	desktopSheet = loadSheets('pynav-conf/pynav-desktop.html')
+if os.path.isfile('desktop.html'):
+	desktopSheet = loadSheets('pynav-desktop.html')
 
-if os.path.isfile('pynav-conf/pynav-mobile.html'):
-	mobileSheet = loadSheets('pynav-conf/pynav-mobile.html')
+if os.path.isfile('mobile.html'):
+	mobileSheet = loadSheets('pynav-mobile.html')
 
 #
 #	Start the dance!
@@ -557,11 +554,16 @@ userSettings = {
 loadSettings(userSettings)
 
 # Checks if the convert app path is correct
+# to do: En vez de mirar directamente el path, mirar que este en el sistema
+# por ejemplo en la variable de entorno PATH
 if not os.path.isfile(userSettings["convert_app"]):
 	print "Error!"
 	print "No se encuentra el archivo [%s]" % userSettings["convert_app"]
 	print "Edita el path en pynav.conf correctamente"
-	sys.exit()
+
+	if os.name == "posix":
+		userSettings["convert_app"] = "convert"
+	# sys.exit()
 
 # ARGSPARSER
 PARSER = argparse.ArgumentParser( prog="pynav", description="Creates html navigations from image files", epilog="Example of use: pynav.py --title \"Previz\" --log-file /project/psd", formatter_class=lambda prog: argparse.HelpFormatter(prog, max_help_position=60) )
@@ -575,7 +577,7 @@ PARSER.add_argument( "--quality", "-q", nargs=1, dest="quality", default=userSet
 PARSER.add_argument( "--overwrite", "-ow", dest="overwrite", action="store_true", help="Overwrite output files" )
 PARSER.add_argument( "--verbose", "-v", dest="verbose", action="store_true", help="Verbose mode" )
 PARSER.add_argument( "--full-path", "-fp", dest="fullpath", action="store_true", help="Show full path of files" )
-PARSER.add_argument( "--log-file", "-l", dest="logfile", action="store_true", help="Create a log file" )
+# PARSER.add_argument( "--log-file", "-l", dest="logfile", action="store_true", help="Create a log file" )
 PARSER.add_argument( "--index-of-pages", "-index", dest="index", action="store_true", help="Create a index of pages" )
 PARSER.add_argument( "--only-image", "-image", dest="onlyimage", action="store_true", help="Create just image files" )
 PARSER.add_argument( "--mobile", "-m", dest="mobile", action="store_true", help="Mobile markup")
@@ -634,7 +636,7 @@ settings["title"] = "".join(args.title)
 settings["overwrite"] = args.overwrite
 settings["verbose"] = args.verbose
 settings["fullPath"] = args.fullpath
-settings["logfile"] = args.logfile
+# settings["logfile"] = args.logfile
 settings["index"] = args.index
 settings["zip"] = args.zip
 settings["onlyimage"] = args.onlyimage
