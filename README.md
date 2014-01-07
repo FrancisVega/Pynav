@@ -126,11 +126,6 @@ Obtenemos más información del proceso en el terminal
 Muestra las rutas completas en el terminal en el proceso
 
 
-<b>-l, --log-file
-
-Crea un archivo pynav.log de texto donde podremos ver los detalles de la conversión
-
-
 <b>-index, --index-of-page
 
 Crea un archivo index.html con enlaces a todas las páginas de la presentación a modo de índice
