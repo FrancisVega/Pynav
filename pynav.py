@@ -38,14 +38,10 @@ import imghdr
 import struct
 import json
 
-#
-#	Vars
-#
-
-SCRIPT_FILE_PATH = os.path.realpath(__file__)
-SCRIPT_DIR_PATH = os.path.dirname(SCRIPT_FILE_PATH)
-CONFIG_FILE_PATH = "%s/pynav-conf/pynav.conf" % SCRIPT_DIR_PATH
-CONFIG_DIR_PATH = "%s/pynav-conf" % SCRIPT_DIR_PATH
+_SCRIPT_FILE_PATH = os.path.realpath(__file__)
+_SCRIPT_DIR_PATH = os.path.dirname(_SCRIPT_FILE_PATH)
+_CONFIG_FILE_PATH = "%s/pynav-conf/pynav.conf" % _SCRIPT_DIR_PATH
+_CONFIG_DIR_PATH = "%s/pynav-conf" % _SCRIPT_DIR_PATH
 
 #
 #	Functions
@@ -53,7 +49,7 @@ CONFIG_DIR_PATH = "%s/pynav-conf" % SCRIPT_DIR_PATH
 
 def loadSettings(settingDic):
 	""" Loads into settingDic the settings found in the config file """
-	pynavConfigFile = "%s/pynav-conf/pynav.conf" % SCRIPT_DIR_PATH
+	pynavConfigFile = "%s/pynav-conf/pynav.conf" % _SCRIPT_DIR_PATH
 	if os.path.isfile(pynavConfigFile):
 		confFile = open(pynavConfigFile, 'r')
 		jsonConfFile = json.load(confFile)
@@ -187,23 +183,6 @@ def makePrevizNav(settings, userSettings):
 		print "\nERROR! No existen archivos tipo [%s] en el directorio [%s]" % (settings["inputFormat"], settings["sourcePath"])
 		sys.exit()
 
-	#
-	# MAKING THE DESTINATION DIRECTORY
-	#
-	# There is two differents behaviours:
-	#
-	# 1 - Pynav custom directory
-	#
-	# 	If the user don't specify a custom directory, pynav create one with a special name
-	#	If already exists a directory with the same name and the user has not specified the parameter --overwrite
-	#	Pynav will add a (n) number after directory name: directory(1)
-	#
-	# 2 - User custom directory
-	#
-	#	If the user specify a custom directory, Pynav will create one with the user name
-	#	If already exists, pynav will skip files that find with the same name
-	#	If the user specify the parameter --overwrite Pynav will overwrite all files with de same name
-
 	# If the destination directory doesnt exists, Pynav will create one
 	if not os.path.exists(settings["destinationPath"]):
 	    os.makedirs(settings["destinationPath"])
@@ -213,7 +192,6 @@ def makePrevizNav(settings, userSettings):
 			nextTrailNumber = resolveConflict(os.path.basename(settings["destinationPath"]), settings["destinationPath"].split(os.path.basename(settings["destinationPath"]))[0])
 			settings["destinationPath"] = "%s(%s)" % (settings["destinationPath"], nextTrailNumber)
 			os.makedirs(settings["destinationPath"])		
-
 	
 	# User custon names
 	if settings["fileName"] != None:
@@ -230,13 +208,11 @@ def makePrevizNav(settings, userSettings):
 	# previz <a href> target htmls
 	tarHtmlsFullPath = shift(htmlsFullPath, 1)
 	
-	#
 	indexHTML = ""
 
 	# Starts processing
 	print "Pynav. Francis Vega 2014\n"
 	print "Simple Navigation html+image from image files\n"
-	print "\n"
 	
 	# Verbose MODDE
 	if settings["verbose"]:
@@ -323,14 +299,8 @@ def makePrevizNav(settings, userSettings):
 					# generate output files
 					crop = '%sx%s+%s+%s' % (int(width), int(newSliceSize), 0, int(slcs*settings["sliceSize"]))
 					
-					subprocess.call(
-						[userSettings["convert_app"],
-						'-quality', str(settings["quality"]),
-						inFile,
-						'-crop', crop,
-						ofile],
-						shell=False
-					)
+					# convert
+					subprocess.call( [userSettings["convert_app"], '-quality', str(settings["quality"]), inFile, '-crop', crop, ofile], shell=False )
 
 					# generate html img tag to include into html file
 					imgTag.append(os.path.basename(ofile))
@@ -384,11 +354,10 @@ def makePrevizNav(settings, userSettings):
 				# Verbose MODDE
 				if settings["verbose"]:
 					elapsedConvert = (time.clock() - startConvertFile)
-					msg = "%03d%% Converting %s to %s @ quality %s (OK) %s secs" % ((float((100.0/filesToConvert))*(i+1)), inFile, outFile, str(settings["quality"]), round(elapsedConvert,2))
-					print msg
+					print "%03d%% Converting %s to %s @ quality %s (OK) %s secs" % ((float((100.0/filesToConvert))*(i+1)), inFile, outFile, str(settings["quality"]), round(elapsedConvert,2))
+					
 				else:
-					msg = "%03d%% ... %s (OK)" % ((float((100.0/filesToConvert))*(i+1)), inFile)
-					print msg
+					print "%03d%% ... %s (OK)" % ((float((100.0/filesToConvert))*(i+1)), inFile)
 
 				fileConverted = fileConverted+1
 
@@ -480,7 +449,7 @@ def makePrevizNav(settings, userSettings):
 #
 
 try:
-	desktopSheet = loadSheets("%s/pynav-desktop.html" % CONFIG_DIR_PATH)
+	desktopSheet = loadSheets("%s/pynav-desktop.html" % _CONFIG_DIR_PATH)
 except:
 	desktopSheet ="\
 \n<!DOCTYPE html>\
@@ -508,7 +477,7 @@ except:
 \n</html>"
 
 try:
-	mobileSheet = loadSheets("%s/pynav-mobile.html" % CONFIG_DIR_PATH)
+	mobileSheet = loadSheets("%s/pynav-mobile.html" % _CONFIG_DIR_PATH)
 except:
 	mobileSheet = "\
 \n<!DOCTYPE html>\
