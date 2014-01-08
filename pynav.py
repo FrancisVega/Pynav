@@ -61,7 +61,6 @@ def loadSettings(settingDic):
 		for key in jsonConfFile["userSettings"].keys():
 			settingDic[key] = jsonConfFile["userSettings"][key]
 
-
 def loadSheets(sheetFile):
 	""" Returns a string with the content o file """
 	f = open(sheetFile, "r")
@@ -95,7 +94,7 @@ def resolveConflict(myDir, dirPath):
 	else:
 		return myDir
 
-def getTypeFromFolder(folder, ImageType):
+def getFilesFromFolder(folder, ImageType):
 	""" Gets file list with custom extension """
 	from os import listdir
 	from os.path import isfile, join	
@@ -183,8 +182,8 @@ def makePrevizNav(settings, userSettings):
 	start = time.clock()	
 
 	# Gets source image files \Files\file.* [psd|png|jpg|gif]
-	sourceImagesFullPath = getTypeFromFolder(settings["sourcePath"], settings["inputFormat"])
-	if len(sourceImagesFullPath) == 0:
+	sourceFiles = getFilesFromFolder(settings["sourcePath"], settings["inputFormat"])
+	if len(sourceFiles) == 0:
 		print "\nERROR! No existen archivos tipo [%s] en el directorio [%s]" % (settings["inputFormat"], settings["sourcePath"])
 		sys.exit()
 
@@ -219,14 +218,14 @@ def makePrevizNav(settings, userSettings):
 	# User custon names
 	if settings["fileName"] != None:
 		# previz\user_custom_file_name.jpg
-		imgsFullPath = ["%s\\%s_%02d.%s" % (settings["destinationPath"], settings["fileName"], n, settings["outputFormat"]) for n in range(len(sourceImagesFullPath))]
+		imgsFullPath = ["%s\\%s_%02d.%s" % (settings["destinationPath"], settings["fileName"], n, settings["outputFormat"]) for n in range(len(sourceFiles))]
 		# previz\user_custom_file_name.html
-		htmlsFullPath = ["%s\\%s_%02d.html" % (settings["destinationPath"], settings["fileName"], n) for n in range(len(sourceImagesFullPath))]
+		htmlsFullPath = ["%s\\%s_%02d.html" % (settings["destinationPath"], settings["fileName"], n) for n in range(len(sourceFiles))]
 	else:
 		# previz\original_name.jpg
-		imgsFullPath = [settings["destinationPath"] + "/" + "%s%s" % (f, "."+settings["outputFormat"]) for f in [os.path.basename(f[:-4]) for f in sourceImagesFullPath]]
+		imgsFullPath = [settings["destinationPath"] + "/" + "%s%s" % (f, "."+settings["outputFormat"]) for f in [os.path.basename(f[:-4]) for f in sourceFiles]]
 		# previz\original_name.html
-		htmlsFullPath = [settings["destinationPath"] + "/" + "%s.html" % f for f in [os.path.basename(f[:-4]) for f in sourceImagesFullPath]]
+		htmlsFullPath = [settings["destinationPath"] + "/" + "%s.html" % f for f in [os.path.basename(f[:-4]) for f in sourceFiles]]
 
 	# previz <a href> target htmls
 	tarHtmlsFullPath = shift(htmlsFullPath, 1)
@@ -248,7 +247,7 @@ def makePrevizNav(settings, userSettings):
 
 	try:
 		fileConverted = 0
-		filesToConvert = len(sourceImagesFullPath)
+		filesToConvert = len(sourceFiles)
 
 		# Custom css style command
 		if len(settings["css"]) > 0:
@@ -277,7 +276,7 @@ def makePrevizNav(settings, userSettings):
 		startConvertFile = time.clock()
 		for i in range(filesToConvert):
 
-			inFile = sourceImagesFullPath[i]+'[0]' # add [0] to flatten psds for convert app
+			inFile = sourceFiles[i]+'[0]' # add [0] to flatten psds for convert app
 			outFile = imgsFullPath[i]
 			
 			# If file exists and overwrite == False, skip.
@@ -660,6 +659,7 @@ else:
 # html sheet
 settings["mobileSheet"] = mobileSheet
 settings["desktopSheet"] = desktopSheet
+#settings["index"] = indexSheet
 
 if settings["html"]:
 	if os.path.isfile("%s/%s" % (os.getcwd(), settings["html"])):
