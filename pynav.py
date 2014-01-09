@@ -21,10 +21,6 @@
 # DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES, EVEN IF FRANCIS VEGA HAS BEEN
 # ADVISED OF THE POSSIBILITY OR PROBABILITY OF SUCH DAMAGES.
 
-#
-#	Some modules
-#
-
 import os
 import sys
 import subprocess
@@ -38,10 +34,16 @@ import imghdr
 import struct
 import json
 
+#
+#	Vars
+#
 _SCRIPT_FILE_PATH = os.path.realpath(__file__)
 _SCRIPT_DIR_PATH = os.path.dirname(_SCRIPT_FILE_PATH)
-_CONFIG_FILE_PATH = "%s/pynav-conf/pynav.conf" % _SCRIPT_DIR_PATH
 _CONFIG_DIR_PATH = "%s/pynav-conf" % _SCRIPT_DIR_PATH
+_CONFIG_FILE_PATH = "%s/pynav.conf" % _CONFIG_DIR_PATH
+_DESKTOP_HTML_SHEET = "%s/pynav-desktop.html" % _CONFIG_DIR_PATH
+_MOBILE_HTML_SHEET =  "%s/pynav-mobile.html" % _CONFIG_DIR_PATH
+_INDEX_PAGE_NAME = "idnex.html"
 
 #
 #	Functions
@@ -49,9 +51,8 @@ _CONFIG_DIR_PATH = "%s/pynav-conf" % _SCRIPT_DIR_PATH
 
 def loadSettings(settingDic):
 	""" Loads into settingDic the settings found in the config file """
-	pynavConfigFile = "%s/pynav-conf/pynav.conf" % _SCRIPT_DIR_PATH
-	if os.path.isfile(pynavConfigFile):
-		confFile = open(pynavConfigFile, 'r')
+	if os.path.isfile(_CONFIG_FILE_PATH):
+		confFile = open(_CONFIG_FILE_PATH, 'r')
 		jsonConfFile = json.load(confFile)
 		confFile.close()
 		for key in jsonConfFile["userSettings"].keys():
@@ -138,7 +139,7 @@ def getImageSize(fname):
 	return width, height
 
 def getPsdSize(fname):
-	""" Determines size of psd """
+	""" Determines size of fname (psd) """
 	error = ""
 	fhandle = open(fname, 'rb')
 	fhandle.read(14)
@@ -437,7 +438,7 @@ def makePrevizNav(settings, userSettings):
 
 	# POST PROCESS
 	if settings["index"]:
-		idx = open("%s/index.html" % settings["destinationPath"], "w")
+		idx = open("%s/%s" % (settings["destinationPath"], _INDEX_PAGE_NAME), "w")
 		idx.write(indexHTML)
 		idx.close()
 
@@ -449,7 +450,7 @@ def makePrevizNav(settings, userSettings):
 #
 
 try:
-	desktopSheet = loadSheets("%s/pynav-desktop.html" % _CONFIG_DIR_PATH)
+	desktopSheet = loadSheets("%s" % _DESKTOP_HTML_SHEET)
 except:
 	desktopSheet ="\
 \n<!DOCTYPE html>\
@@ -477,7 +478,7 @@ except:
 \n</html>"
 
 try:
-	mobileSheet = loadSheets("%s/pynav-mobile.html" % _CONFIG_DIR_PATH)
+	mobileSheet = loadSheets("%s" % _MOBILE_HTML_SHEET)
 except:
 	mobileSheet = "\
 \n<!DOCTYPE html>\
@@ -552,7 +553,6 @@ PARSER.add_argument( "--quality", "-q", nargs=1, dest="quality", default=userSet
 PARSER.add_argument( "--overwrite", "-ow", dest="overwrite", action="store_true", help="Overwrite output files" )
 PARSER.add_argument( "--verbose", "-v", dest="verbose", action="store_true", help="Verbose mode" )
 PARSER.add_argument( "--full-path", "-fp", dest="fullpath", action="store_true", help="Show full path of files" )
-# PARSER.add_argument( "--log-file", "-l", dest="logfile", action="store_true", help="Create a log file" )
 PARSER.add_argument( "--index-of-pages", "-index", dest="index", action="store_true", help="Create a index of pages" )
 PARSER.add_argument( "--only-image", "-image", dest="onlyimage", action="store_true", help="Create just image files" )
 PARSER.add_argument( "--mobile", "-m", dest="mobile", action="store_true", help="Mobile markup")
@@ -561,6 +561,7 @@ PARSER.add_argument( "--css-style", "-style", nargs=1, dest="css", default="", t
 PARSER.add_argument( "--zip", "-z", dest="zip", action="store_true", help="Create a zip file with results files" )
 PARSER.add_argument( "--flush", "-f", dest="flush", action="store_true", help="Delete all the content in the destination folder" )
 PARSER.add_argument( "--html-sheet", "-html", nargs=1, dest="html", default="", type=str, help="Use a custom html file")
+# PARSER.add_argument( "--log-file", "-l", dest="logfile", action="store_true", help="Create a log file" )
 # PARSER.add_argument( "--list-html-tags", "-tags", nargs=1, dest="html", default="", type=str, help="Show a list of pynav html tags")
 
 # Gets parse arguments
@@ -611,7 +612,6 @@ settings["title"] = "".join(args.title)
 settings["overwrite"] = args.overwrite
 settings["verbose"] = args.verbose
 settings["fullPath"] = args.fullpath
-# settings["logfile"] = args.logfile
 settings["index"] = args.index
 settings["zip"] = args.zip
 settings["onlyimage"] = args.onlyimage
@@ -619,6 +619,7 @@ settings["flush"] = args.flush
 settings["sliceSize"] = args.slice[0]
 settings["css"] = "".join(args.css)
 settings["html"] = "".join(args.html)
+# settings["logfile"] = args.logfile
 
 if args.filename == None:
 	settings["fileName"] = None
