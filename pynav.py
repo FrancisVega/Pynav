@@ -60,14 +60,15 @@ def loadSettings(settingDic):
 
 def loadSheets(sheetFile):
 	""" Returns a string with the content o file """
-	f = open(sheetFile, "r")
-	content = f.read()
-	f.close()
-
-	if "[pynav-img]" not in content:
-		return False
-
-	return content
+	try:
+		f = open(sheetFile, "r")
+		content = f.read()
+		f.close()		
+		if "[pynav-img]" not in content:
+			return False		
+		return content
+	except:
+		print "\nError. No existe o no puede abrirse el archivo %s" % sheetFile
 
 def getMaxTrailNumber(baseName, dirList):
 	""" Returns the maximun copy number (string) of an folder list based on a name """
@@ -171,7 +172,7 @@ def zip(src, dst):
 		zf.write(os.path.abspath("%s/%s" % (abs_src, f)), os.path.basename(f))
 	zf.close()
 
-def makePrevizNav(settings, userSettings):
+def pynav(settings, userSettings):
 	"""
 		Main Function
 	"""
@@ -428,7 +429,7 @@ def makePrevizNav(settings, userSettings):
 	elapsed = (time.clock() - start)
 	print "\n"
 	print "%s files converted in %s seconds\n" % (str(fileConverted), str(round(elapsed,2)))
-	print "Mockup finished at [%s]\n" % settings["destinationPath"]
+	print "Mockup finished at %s" % os.path.abspath(settings["destinationPath"])
 
 	# Removes the temporal folder
 	try:
@@ -444,13 +445,14 @@ def makePrevizNav(settings, userSettings):
 
 	if settings["zip"]:
 		zip(settings["destinationPath"], "%s/%s.zip" % (settings["destinationPath"], os.path.basename(settings["destinationPath"])))
+		print "Mockup zipped at %s" % os.path.abspath(("%s/%s.zip" % (settings["destinationPath"], os.path.basename(settings["destinationPath"]))))
 
 #
 # html sheets
 #
 
 try:
-	desktopSheet = loadSheets("%s" % _DESKTOP_HTML_SHEET)
+	desktopSheet = loadSheets(_DESKTOP_HTML_SHEET)
 except:
 	desktopSheet ="\
 \n<!DOCTYPE html>\
@@ -478,7 +480,7 @@ except:
 \n</html>"
 
 try:
-	mobileSheet = loadSheets("%s" % _MOBILE_HTML_SHEET)
+	mobileSheet = loadSheets(_MOBILE_HTML_SHEET)
 except:
 	mobileSheet = "\
 \n<!DOCTYPE html>\
@@ -645,6 +647,6 @@ if settings["html"]:
 		sys.exit()
 
 # Go with the flow!!
-makePrevizNav(settings, userSettings)
+pynav(settings, userSettings)
 
 # :)
