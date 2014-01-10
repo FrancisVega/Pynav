@@ -34,16 +34,19 @@ import imghdr
 import struct
 import json
 
+
 #
 #	Vars
 #
-_SCRIPT_FILE_PATH = os.path.realpath(__file__)
-_SCRIPT_DIR_PATH = os.path.dirname(_SCRIPT_FILE_PATH)
-_CONFIG_DIR_PATH = "%s/pynav-conf" % _SCRIPT_DIR_PATH
-_CONFIG_FILE_PATH = "%s/pynav.conf" % _CONFIG_DIR_PATH
-_DESKTOP_HTML_SHEET = "%s/pynav-desktop.html" % _CONFIG_DIR_PATH
-_MOBILE_HTML_SHEET =  "%s/pynav-mobile.html" % _CONFIG_DIR_PATH
-_INDEX_PAGE_NAME = "idnex.html"
+
+SCRIPT_FILE_PATH = os.path.realpath(__file__)
+SCRIPT_DIR_PATH = os.path.dirname(SCRIPT_FILE_PATH)
+CONFIG_DIR_PATH = os.path.abspath("%s/pynav-conf" % SCRIPT_DIR_PATH)
+CONFIG_FILE_PATH = os.path.abspath("%s/pynav.conf" % CONFIG_DIR_PATH)
+DESKTOP_HTML_SHEET = os.path.abspath("%s/pynav-desktop.html" % CONFIG_DIR_PATH)
+MOBILE_HTML_SHEET =  os.path.abspath("%s/pynav-mobile.html" % CONFIG_DIR_PATH)
+INDEX_PAGE_NAME = "index.html"
+
 
 #
 #	Functions
@@ -51,12 +54,15 @@ _INDEX_PAGE_NAME = "idnex.html"
 
 def loadSettings(settingDic):
 	""" Loads into settingDic the settings found in the config file """
-	if os.path.isfile(_CONFIG_FILE_PATH):
-		confFile = open(_CONFIG_FILE_PATH, 'r')
-		jsonConfFile = json.load(confFile)
-		confFile.close()
-		for key in jsonConfFile["userSettings"].keys():
-			settingDic[key] = jsonConfFile["userSettings"][key]
+	try:
+		configFile = open(CONFIG_FILE_PATH, 'r')
+		jsonConfigFile = json.load(configFile)
+		configFile.close()
+		for key, value in jsonConfigFile["userSettings"].items():
+			settingDic[key] = value
+	except:
+		print "\nError. El archivo %s no existe o no puede abrirse" % CONFIG_FILE_PATH
+
 
 def loadSheets(sheetFile):
 	""" Returns a string with the content o file """
@@ -68,7 +74,8 @@ def loadSheets(sheetFile):
 			return False		
 		return content
 	except:
-		print "\nError. No existe o no puede abrirse el archivo %s" % sheetFile
+		print "\nError. El archivo %s no existe o no puede abrirse" % sheetFile
+
 
 def getMaxTrailNumber(baseName, dirList):
 	""" Returns the maximun copy number (string) of an folder list based on a name """
@@ -84,6 +91,7 @@ def getMaxTrailNumber(baseName, dirList):
 		# There is not folders with copy number, just the same folder name. Then max copy number = (1)
 		return "1"
 
+
 def resolveConflict(myDir, dirPath):
 	"""	Returns a next copy directory name if name == name(1). if name(12) == name(13) """
 	listDir = getListDir(dirPath)
@@ -92,16 +100,19 @@ def resolveConflict(myDir, dirPath):
 	else:
 		return myDir
 
+
 def getFilesFromFolder(folder, ImageType):
 	""" Gets file list with custom extension """
 	from os import listdir
 	from os.path import isfile, join	
 	return [ "%s/%s" % (folder, f) for f in listdir(folder) if isfile(join(folder,f)) and f[-3:] == ImageType]
 
+
 def shift(seq, n):
 	""" Shifts list items by n """
 	n = n % len(seq)
 	return seq[n:] + seq[:n]
+
 
 def getImageSize(fname):
 	""" Determines the image type of fhandle and return its size """
@@ -139,6 +150,7 @@ def getImageSize(fname):
 
 	return width, height
 
+
 def getPsdSize(fname):
 	""" Determines size of fname (psd) """
 	error = ""
@@ -151,13 +163,16 @@ def getPsdSize(fname):
 	fhandle.close()
 	return width, height
 
+
 def getListDir(path):
 	""" Returns List of folders """
 	return [d for d in os.listdir(path) if os.path.isdir(os.path.join(path, d))]
 
+
 def getFileList(path):
 	""" Returns List of files """
 	return [d for d in os.listdir(path) if not os.path.isdir(os.path.join(path, d))]
+
 
 def zip(src, dst):
 	""" zip files in a src with dst name """
@@ -171,6 +186,7 @@ def zip(src, dst):
 	for f in files:
 		zf.write(os.path.abspath("%s/%s" % (abs_src, f)), os.path.basename(f))
 	zf.close()
+
 
 def pynav(settings, userSettings):
 	"""
@@ -439,7 +455,7 @@ def pynav(settings, userSettings):
 
 	# POST PROCESS
 	if settings["index"]:
-		idx = open("%s/%s" % (settings["destinationPath"], _INDEX_PAGE_NAME), "w")
+		idx = open("%s/%s" % (settings["destinationPath"], INDEX_PAGE_NAME), "w")
 		idx.write(indexHTML)
 		idx.close()
 
@@ -452,7 +468,7 @@ def pynav(settings, userSettings):
 #
 
 try:
-	desktopSheet = loadSheets(_DESKTOP_HTML_SHEET)
+	desktopSheet = loadSheets(DESKTOP_HTML_SHEET)
 except:
 	desktopSheet ="\
 \n<!DOCTYPE html>\
@@ -480,7 +496,7 @@ except:
 \n</html>"
 
 try:
-	mobileSheet = loadSheets(_MOBILE_HTML_SHEET)
+	mobileSheet = loadSheets(MOBILE_HTML_SHEET)
 except:
 	mobileSheet = "\
 \n<!DOCTYPE html>\
