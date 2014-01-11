@@ -71,7 +71,7 @@ def load_html_sheet(sheetFile):
             return False            
         return content
     except:
-    	errprint("El archivo {0} no existe o no puede abrirse".format(sheetFile))
+        errprint("El archivo {0} no existe o no puede abrirse".format(sheetFile))
 
 
 def get_max_trail_number(baseName, dirList):
