@@ -43,12 +43,12 @@ INDEX_PAGE_NAME = "index.html"
 
 
 def errprint(msg):
-    """Custom error printing"""
+    """Custom error printing."""
     print("\nERROR:", msg, end='\n', file=sys.stderr)
 
 
 def load_settings(settingDic):
-    """Loads into settingDic the settings found in the config file"""
+    """Loads into settingDic the settings found in the config file."""
     try:
         configFile = open(CONFIG_FILE_PATH, 'r')
         jsonConfigFile = json.load(configFile)
@@ -60,8 +60,8 @@ def load_settings(settingDic):
 
 
 def load_html_sheet(sheetFile):
-    """Returns a string with the content o file and check if file is a valid
-    pynav html sheet
+    """Returns a string with the content o file and check if file is a
+    valid pynav html sheet.
 
     """
     try:
@@ -76,8 +76,8 @@ def load_html_sheet(sheetFile):
 
 
 def get_max_trail_number(baseName, dirList):
-    """Returns the maximun copy number (string) of an folder list based on a
-    name
+    """Returns the maximun copy number (string) of an folder list based
+    on a name.
 
     """
     try:
@@ -94,7 +94,10 @@ def get_max_trail_number(baseName, dirList):
 
 
 def resolve_conflict(myDir, dirPath):
-    """Returns a new directory name with suffix (n) if original exists"""
+    """Returns a new directory name with suffix (n) if original
+    exists.
+
+    """
     listDir = get_list_dir(dirPath)
     if myDir in listDir:
         return get_max_trail_number(myDir, listDir)
@@ -102,21 +105,19 @@ def resolve_conflict(myDir, dirPath):
         return myDir
 
 
-def get_files_from_folder(folder, ImageType):
-    """Gets file list with custom extension"""
-    from os import listdir
-    from os.path import isfile, join
-    return [ "{0}/{1}".format(folder, f) for f in listdir(folder) if isfile(join(folder,f)) and f[-3:] == ImageType]
+def get_files_from_folder(folder, imageFormat):
+    """Gets file list with custom extension."""
+    return [ os.path.join(folder, file) for file in os.listdir(folder) if os.path.isfile(os.path.join(folder, file))and file[-3:] == imageFormat]
 
 
 def shift(seq, n):
-    """Shifts list items by n"""
+    """Shifts list items by n."""
     n = n % len(seq)
     return seq[n:] + seq[:n]
 
 
 def get_image_size(fname):
-    """Determines the image type of fhandle and return its size"""
+    """Determines the image type of fhandle and return its size."""
     fhandle = open(fname, 'rb')
     head = fhandle.read(24)
 
@@ -153,7 +154,7 @@ def get_image_size(fname):
 
 
 def get_psd_size(fname):
-    """Determines size of fname (psd)"""
+    """Determines size of fname (psd)."""
     error = ""
     fhandle = open(fname, 'rb')
     fhandle.read(14)
@@ -166,17 +167,17 @@ def get_psd_size(fname):
 
 
 def get_list_dir(path):
-    """Returns List of folders"""
+    """Returns List of folders."""
     return [d for d in os.listdir(path) if os.path.isdir(os.path.join(path, d))]
 
 
 def get_file_list(path):
-    """Returns List of files"""
+    """Returns List of files."""
     return [d for d in os.listdir(path) if not os.path.isdir(os.path.join(path, d))]
 
 
 def zip(src, dst):
-    """zip files in a src with dst name"""
+    """zip files in a src with dst name."""
     if os.path.isfile(dst):
         os.remove(dst)
 
@@ -190,7 +191,10 @@ def zip(src, dst):
 
 
 def pynav(settings, userSettings):
-    """Get user and private settings, convert files and generate htmls"""
+    """Get user and private settings, convert files and generate
+    htmls.
+
+    """
 
     # timing!
     start = time.clock()
@@ -257,9 +261,7 @@ def pynav(settings, userSettings):
 
         # Flush
         if settings["flush"]:
-            from os import listdir
-            from os.path import isfile, join
-            for content in listdir(settings["destinationPath"]):
+            for content in os.listdir(settings["destinationPath"]):
                 content = os.path.abspath("{0}/{1}".format(settings["destinationPath"], content))
                 if os.path.isdir(content):
                     shutil.rmtree(content)
@@ -267,7 +269,6 @@ def pynav(settings, userSettings):
                     os.remove(content)
 
         # File by file
-        startConvertFile = time.clock()
         for i in range(filesToConvert):
 
             inFile = sourceFiles[i]+'[0]' # add [0] to flatten psds for convert app
@@ -300,7 +301,7 @@ def pynav(settings, userSettings):
                 width = str(size[0])
                 height = str(size[1])
 
-                import math
+                # import math
                 nSlices = int(math.ceil(float(height)/float(settings["sliceSize"])))
 
                 imgTag = []
@@ -343,7 +344,6 @@ def pynav(settings, userSettings):
                     tags = tags.replace("[pynav-img-width]", width)
                     tags = tags.replace("[pynav-img-height]", height)
                     tags = tags.replace("[pynav-next-html]", nextHtmlFile)
-
                     tags = tags.replace("[pynav-img]", imgTag[0])
 
                     if nSlices > 1:
@@ -372,7 +372,7 @@ def pynav(settings, userSettings):
                     outFile = os.path.basename(outFile)
 
                 # Print info into terminal
-                print("{:03d}% ... {} (OK)".format(int((100.0/filesToConvert) * (i + 1)), inFile))
+                print("{:03d}% ... {}".format(int((100.0/filesToConvert) * (i + 1)), inFile))
 
                 fileConverted = fileConverted + 1
 
@@ -434,7 +434,6 @@ def pynav(settings, userSettings):
         print("", end="\n")
         print("\nInterrupted by a user", end="\n")
 
-    import math
     elapsed = (time.clock() - start)
     print("", end="\n")
     print("{0} files converted in {1} seconds".format(str(fileConverted), str(round(elapsed,2))), end="\n")
@@ -545,7 +544,7 @@ if not os.path.isfile(userSettings["convert_app"]):
     # sys.exit()
 
 # ARGSPARSER
-PARSER = argparse.ArgumentParser( prog="pynav", description="Creates html navigations from image files", epilog="Example of use: pynav.py --title \"Previz\" --log-file /project/psd", formatter_class=lambda prog: argparse.HelpFormatter(prog, max_help_position=60) )
+PARSER = argparse.ArgumentParser( prog="pynav", description="Creates html navigations from image files", epilog="Example of use: pynav.py --title \"Previz\" --mobile /project/psd", formatter_class=lambda prog: argparse.HelpFormatter(prog, max_help_position=60) )
 PARSER.add_argument( "sourcePath", metavar="Source", type=str, nargs=1, help="Source Path of Images" )
 PARSER.add_argument( "destinationPath", metavar="Destination", type=str, nargs="?", help="Destination Path of Mokcup" )
 PARSER.add_argument( "--in-format", "-if", nargs=1, dest="inFormat", default=userSettings["default_inputFormat"], type=str, help="Source file format" )
