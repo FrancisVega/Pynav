@@ -2,20 +2,21 @@
 # encoding: utf-8
 
 # Copyright (C) 2014 Francis Vega
-# 
+#
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
 
 from __future__ import print_function
 import os
@@ -66,9 +67,9 @@ def load_html_sheet(sheetFile):
     try:
         f = open(sheetFile, "r")
         content = f.read()
-        f.close()               
+        f.close()
         if "[pynav-img]" not in content:
-            return False            
+            return False
         return content
     except:
         errprint("El archivo {0} no existe o no puede abrirse".format(sheetFile))
@@ -83,7 +84,7 @@ def get_max_trail_number(baseName, dirList):
         # There is folder(s) with trails (n)
         baseNameList = [d for d in dirList if d.startswith("{0}(".format(baseName))]
         trailsNumbers = []
-        for d in baseNameList:  
+        for d in baseNameList:
             trailsNumbers.append(int(d.split(baseName)[1].split("(")[1].split(")")[0]))
         newTrailNumber = max(trailsNumbers) + 1
         return str(newTrailNumber)
@@ -104,7 +105,7 @@ def resolve_conflict(myDir, dirPath):
 def get_files_from_folder(folder, ImageType):
     """Gets file list with custom extension"""
     from os import listdir
-    from os.path import isfile, join 
+    from os.path import isfile, join
     return [ "{0}/{1}".format(folder, f) for f in listdir(folder) if isfile(join(folder,f)) and f[-3:] == ImageType]
 
 
@@ -190,40 +191,45 @@ def zip(src, dst):
 
 def pynav(settings, userSettings):
     """Get user and private settings, convert files and generate htmls"""
+
     # timing!
     start = time.clock()
 
-    # Gets source image files \Files\file.* [psd|png|jpg|gif]
+    # Get source files in a list.
     sourceFiles = get_files_from_folder(settings["sourcePath"], settings["inputFormat"])
     if len(sourceFiles) == 0:
         errprint("No existen archivos tipo {0} en el directorio {1}".format(settings["inputFormat"], settings["sourcePath"]))
         sys.exit()
 
-    # If the destination directory doesnt exists, Pynav will create one
-    if not os.path.exists(settings["destinationPath"]):
-        os.makedirs(settings["destinationPath"])
-    else:
-        # If the destination directory exists, is the custom Pynav directory and the parameter --overwrite is false, Pynav will create a () trailed one Directory_Name(n)
-        if settings["customDestPath"] == False and settings["overwrite"] == False:
-            nextTrailNumber = resolve_conflict(os.path.basename(settings["destinationPath"]), settings["destinationPath"].split(os.path.basename(settings["destinationPath"]))[0])
-            settings["destinationPath"] = "{0}({1})".format(settings["destinationPath"], nextTrailNumber)
-            os.makedirs(settings["destinationPath"])                
+    # Directory creation.
+    # If the destination directory exists and not --ovwerwrite args,
+    # Pynav will createa a directory_name(n) directory.
 
-    # User custon names
+    # Destination path exists and --overwrite=False
+    if os.path.exists(settings["destinationPath"]) == True and settings["overwrite"] == False:
+        trailNumber = resolve_conflict(os.path.basename(settings["destinationPath"]), settings["destinationPath"].split(os.path.basename(settings["destinationPath"]))[0])
+        settings["destinationPath"] = "{0}({1})".format(settings["destinationPath"], trailNumber)
+        os.makedirs(settings["destinationPath"])
+
+    # Destination path doesn't exists
+    if os.path.exists(settings["destinationPath"]) == False:
+        os.makedirs(settings["destinationPath"])
+
+    # Command user custon names
     if settings["fileName"] != None:
-        # previz\user_custom_file_name.jpg
+        # dest\user_custom_file_name.jpg
         imgsFullPath = ["{}/{}_{:02d}.{}".format(settings["destinationPath"], settings["fileName"], n, settings["outputFormat"]) for n in range(len(sourceFiles))]
-        # previz\user_custom_file_name.html
+        # dest\user_custom_file_name.html
         htmlsFullPath = ["{}/{}_{:02d}.html".format(settings["destinationPath"], settings["fileName"], n) for n in range(len(sourceFiles))]
     else:
-        # previz\original_name.jpg
-        imgsFullPath = [settings["destinationPath"] + "/" + "{0}.{1}".format(f, settings["outputFormat"]) for f in [os.path.basename(f[:-4]) for f in sourceFiles]]
-        # previz\original_name.html
-        htmlsFullPath = [settings["destinationPath"] + "/" + "{0}.html".format(f) for f in [os.path.basename(f[:-4]) for f in sourceFiles]]
+        # dest\original_name.jpg
+        imgsFullPath = ["{0}/{1}.{2}".format(settings["destinationPath"], f, settings["outputFormat"]) for f in [os.path.basename(f[:-4]) for f in sourceFiles]]
+        # dest\original_name.html
+        htmlsFullPath = ["{0}/{1}.html".format(settings["destinationPath"], f) for f in [os.path.basename(f[:-4]) for f in sourceFiles]]
 
-    # previz <a href> target htmls
+    # pynav <a href> target htmls
     tarHtmlsFullPath = shift(htmlsFullPath, 1)
-    
+
     indexHTML = ""
 
     # Starts processing
@@ -245,21 +251,14 @@ def pynav(settings, userSettings):
         filesToConvert = len(sourceFiles)
 
         # Custom css style command
+        customCss = ""
         if len(settings["css"]) > 0:
-            pattern = re.compile(r'\s+')
-            customCss = settings["css"]
-            # customCss = re.sub(pattern, '', settings["css"])
-            customCss = customCss.split("}")[:-1]
-            customCss = [((("\t\t{0}}".format(settings["css"])).replace("{", " {\n\t\t\t")).replace(";",";\n\t\t\t")).replace("\n\t\t\t}","\n\t\t}") for settings["css"] in customCss]
-            customCss = "".join(customCss)
-            customCss = "/* CSS Style Command Inline*/\n" + customCss
-        else:
-            customCss = ""
+            customCss = "/* CSS Style Command Inline*/\n{0}".format(settings["css"])
 
         # Flush
         if settings["flush"]:
             from os import listdir
-            from os.path import isfile, join        
+            from os.path import isfile, join
             for content in listdir(settings["destinationPath"]):
                 content = os.path.abspath("{0}/{1}".format(settings["destinationPath"], content))
                 if os.path.isdir(content):
@@ -273,17 +272,17 @@ def pynav(settings, userSettings):
 
             inFile = sourceFiles[i]+'[0]' # add [0] to flatten psds for convert app
             outFile = imgsFullPath[i]
-            
+
             # If file exists and overwrite == False, skip.
             fileExists = os.path.isfile(outFile)
             if fileExists and settings["overwrite"] == False:
-                cpath = os.path.basename(inFile)[:-3]
-                cperc = int(100.0 / filesToConvert) * (i + 1)
-                
-                if settings["fullPath"]:
-                    cpath = inFile[:-3]
+                path = os.path.basename(inFile)[:-3]
+                pct = int(100.0 / filesToConvert) * (i + 1)
 
-                print ("{:03d}% ... {} (Skip)".format(cperc, cpath), end="\n")
+                if settings["fullPath"]:
+                    path = inFile[:-3]
+
+                print ("{:03d}% ... {} (Skip)".format(pct, path), end="\n")
 
             else:
                 # Select correct HTML Sheet
@@ -303,13 +302,13 @@ def pynav(settings, userSettings):
 
                 import math
                 nSlices = int(math.ceil(float(height)/float(settings["sliceSize"])))
-                
+
                 imgTag = []
                 for slcs in range(nSlices):
                     newSliceSize = settings["sliceSize"]
 
                     if int(settings["sliceSize"]) > float(height) - (slcs * float(settings["sliceSize"])):
-                        newSliceSize = float(height) - (slcs * float(settings["sliceSize"]))                        
+                        newSliceSize = float(height) - (slcs * float(settings["sliceSize"]))
 
                     # change the output file name adding number for slice
                     ofile = outFile
@@ -319,7 +318,7 @@ def pynav(settings, userSettings):
 
                     # generate output files
                     crop = '{0}x{1}+{2}+{3}'.format(int(width), int(newSliceSize), 0, int(slcs * settings["sliceSize"]))
-                    
+
                     # convert
                     subprocess.call([userSettings["convert_app"], '-quality', str(settings["quality"]), inFile, '-crop', crop, ofile], shell=False)
 
@@ -346,11 +345,11 @@ def pynav(settings, userSettings):
                     tags = tags.replace("[pynav-next-html]", nextHtmlFile)
 
                     tags = tags.replace("[pynav-img]", imgTag[0])
-                    
+
                     if nSlices > 1:
                         for j in range(nSlices-1):
                             tags = tags.replace("[pynav-img-slice-{0}]".format(str(j + 1)), imgTag[j + 1])
-            
+
                     html.write(tags)
                     html.close()
 
@@ -372,18 +371,14 @@ def pynav(settings, userSettings):
                     inFile = os.path.basename(inFile)[:-3]
                     outFile = os.path.basename(outFile)
 
-                # Verbose MODDE
-                if settings["verbose"]:
-                    elapsedConvert = (time.clock() - startConvertFile)
-                    print("{:03d} Converting {} to {} @ quality {} (OK) {} secs".format(int((100.0/filesToConvert)*(i+1)), inFile, outFile, str(settings["quality"]), round(elapsedConvert,2)), end="\n")                 
-                else:
-                    print("{:03d}% ... {} (OK)".format(int((100.0/filesToConvert) * (i + 1)), inFile))
+                # Print info into terminal
+                print("{:03d}% ... {} (OK)".format(int((100.0/filesToConvert) * (i + 1)), inFile))
 
                 fileConverted = fileConverted + 1
 
             indexHTML += "<li><a href='{0}'>{1}</a></li>\n".format(os.path.basename(htmlsFullPath[i]), os.path.basename(outFile)[:-4])
-    
-    
+
+
         indexHTML = "\
 \n<!--\
 \n\
@@ -437,11 +432,11 @@ def pynav(settings, userSettings):
 
     except KeyboardInterrupt:
         print("", end="\n")
-        print("\nInterrupted by a user", end="\n") 
+        print("\nInterrupted by a user", end="\n")
 
     import math
     elapsed = (time.clock() - start)
-    print("", end="\n")    
+    print("", end="\n")
     print("{0} files converted in {1} seconds".format(str(fileConverted), str(round(elapsed,2))), end="\n")
     print("Mockup finished at {0}".format(os.path.abspath(settings["destinationPath"])), end="\n\n")
 
@@ -461,9 +456,7 @@ def pynav(settings, userSettings):
         zip(settings["destinationPath"], "{0}/{1}.zip".format(settings["destinationPath"], os.path.basename(settings["destinationPath"])))
         print("Mockup zipped at {0}".format(os.path.abspath(("{0}/{1}.zip".format(settings["destinationPath"], os.path.basename(settings["destinationPath"]))))), end="\n\n")
 
-#
 # html sheets
-#
 
 try:
     desktopSheet = load_html_sheet(DESKTOP_HTML_SHEET)
@@ -599,7 +592,7 @@ if settings["destinationPath"] == None:
     settings["destinationPath"] = "{0}/{1}".format(settings["sourcePath"], settings["pynavDirName"])
 # If destination param exists, then pynav will use it to create the directory
 else:
-    settings["destinationPath"] = "".join(settings["destinationPath"])      
+    settings["destinationPath"] = "".join(settings["destinationPath"])
     settings["customDestPath"] = True
 
 # If sourcePath and destPath are the same, pynav yield a warning, just for information.
