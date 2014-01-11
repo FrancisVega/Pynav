@@ -42,6 +42,7 @@ INDEX_PAGE_NAME = "index.html"
 
 
 def errprint(msg):
+    """Custom error printing"""
     print("\nERROR:", msg, end='\n', file=sys.stderr)
 
 
@@ -408,20 +409,16 @@ def pynav(settings, userSettings):
 \n                              color: black;\
 \n                              font-weight: bold;\
 \n                      }\
-\n\
 \n                      h1 {\
 \n                              margin: 20px 0 0 20px;\
 \n                      }\
-\n\
 \n                      li {\
 \n                              line-height: 1.6;\
 \n                      }\
-\n\
 \n                      ul {\
 \n                              list-style: none;\
 \n                              margin: 20px 0 0 20px;\
 \n                      }\
-\n\
 \n                      *{\
 \n                              font-family: Arial;\
 \n                              border: 0;\
@@ -549,7 +546,6 @@ load_settings(userSettings)
 # por ejemplo en la variable de entorno PATH
 if not os.path.isfile(userSettings["convert_app"]):
     errprint("No se encuentra el archivo {0}".format(userSettings["convert_app"]))
-
     # Use imagemagick installed on osx / linux
     if os.name == "posix":
         userSettings["convert_app"] = "convert"
