@@ -18,12 +18,10 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 from __future__ import print_function
-
 import os
 import sys
 import time
 import shutil
-
 import subprocess
 import argparse
 import math
@@ -34,8 +32,6 @@ import struct
 import json
 
 
-# Globals
-
 SCRIPT_FILE_PATH = os.path.realpath(__file__)
 SCRIPT_DIR_PATH = os.path.dirname(SCRIPT_FILE_PATH)
 CONFIG_DIR_PATH = os.path.abspath("{0}/pynav-conf".format(SCRIPT_DIR_PATH))
@@ -45,14 +41,12 @@ MOBILE_HTML_SHEET =  os.path.abspath("{0}/pynav-mobile.html".format(CONFIG_DIR_P
 INDEX_PAGE_NAME = "index.html"
 
 
-# Functions
-
 def errprint(msg):
     print("\nERROR:", msg, end='\n', file=sys.stderr)
 
 
 def load_settings(settingDic):
-    """ Loads into settingDic the settings found in the config file """
+    """Loads into settingDic the settings found in the config file"""
     try:
         configFile = open(CONFIG_FILE_PATH, 'r')
         jsonConfigFile = json.load(configFile)
@@ -64,7 +58,10 @@ def load_settings(settingDic):
 
 
 def load_html_sheet(sheetFile):
-    """ Returns a string with the content o file """
+    """Returns a string with the content o file and check if file is a valid
+    pynav html sheet
+
+    """
     try:
         f = open(sheetFile, "r")
         content = f.read()
@@ -77,10 +74,13 @@ def load_html_sheet(sheetFile):
 
 
 def get_max_trail_number(baseName, dirList):
-    """ Returns the maximun copy number (string) of an folder list based on a name """
+    """Returns the maximun copy number (string) of an folder list based on a
+    name
+
+    """
     try:
         # There is folder(s) with trails (n)
-        baseNameList = [d for d in dirList if d.startswith(baseName+"(")]
+        baseNameList = [d for d in dirList if d.startswith("{0}(".format(baseName))]
         trailsNumbers = []
         for d in baseNameList:  
             trailsNumbers.append(int(d.split(baseName)[1].split("(")[1].split(")")[0]))
@@ -92,7 +92,7 @@ def get_max_trail_number(baseName, dirList):
 
 
 def resolve_conflict(myDir, dirPath):
-    """     Returns a next copy directory name if name == name(1). if name(12) == name(13) """
+    """Returns a new directory name with suffix (n) if original exists"""
     listDir = get_list_dir(dirPath)
     if myDir in listDir:
         return get_max_trail_number(myDir, listDir)
@@ -101,20 +101,20 @@ def resolve_conflict(myDir, dirPath):
 
 
 def get_files_from_folder(folder, ImageType):
-    """ Gets file list with custom extension """
+    """Gets file list with custom extension"""
     from os import listdir
-    from os.path import isfile, join        
+    from os.path import isfile, join 
     return [ "{0}/{1}".format(folder, f) for f in listdir(folder) if isfile(join(folder,f)) and f[-3:] == ImageType]
 
 
 def shift(seq, n):
-    """ Shifts list items by n """
+    """Shifts list items by n"""
     n = n % len(seq)
     return seq[n:] + seq[:n]
 
 
 def get_image_size(fname):
-    """ Determines the image type of fhandle and return its size """
+    """Determines the image type of fhandle and return its size"""
     fhandle = open(fname, 'rb')
     head = fhandle.read(24)
 
@@ -151,7 +151,7 @@ def get_image_size(fname):
 
 
 def get_psd_size(fname):
-    """ Determines size of fname (psd) """
+    """Determines size of fname (psd)"""
     error = ""
     fhandle = open(fname, 'rb')
     fhandle.read(14)
@@ -164,17 +164,17 @@ def get_psd_size(fname):
 
 
 def get_list_dir(path):
-    """ Returns List of folders """
+    """Returns List of folders"""
     return [d for d in os.listdir(path) if os.path.isdir(os.path.join(path, d))]
 
 
 def get_file_list(path):
-    """ Returns List of files """
+    """Returns List of files"""
     return [d for d in os.listdir(path) if not os.path.isdir(os.path.join(path, d))]
 
 
 def zip(src, dst):
-    """ zip files in a src with dst name """
+    """zip files in a src with dst name"""
     if os.path.isfile(dst):
         os.remove(dst)
 
@@ -188,11 +188,9 @@ def zip(src, dst):
 
 
 def pynav(settings, userSettings):
-    """
-            Main Function
-    """
+    """Get user and private settings, convert files and generate htmls"""
     # timing!
-    start = time.clock()    
+    start = time.clock()
 
     # Gets source image files \Files\file.* [psd|png|jpg|gif]
     sourceFiles = get_files_from_folder(settings["sourcePath"], settings["inputFormat"])
@@ -218,7 +216,7 @@ def pynav(settings, userSettings):
         htmlsFullPath = ["{}/{}_{:02d}.html".format(settings["destinationPath"], settings["fileName"], n) for n in range(len(sourceFiles))]
     else:
         # previz\original_name.jpg
-        imgsFullPath = [settings["destinationPath"] + "/" + "{0}{1}".format(f, "."+settings["outputFormat"]) for f in [os.path.basename(f[:-4]) for f in sourceFiles]]
+        imgsFullPath = [settings["destinationPath"] + "/" + "{0}.{1}".format(f, settings["outputFormat"]) for f in [os.path.basename(f[:-4]) for f in sourceFiles]]
         # previz\original_name.html
         htmlsFullPath = [settings["destinationPath"] + "/" + "{0}.html".format(f) for f in [os.path.basename(f[:-4]) for f in sourceFiles]]
 
@@ -279,7 +277,7 @@ def pynav(settings, userSettings):
             fileExists = os.path.isfile(outFile)
             if fileExists and settings["overwrite"] == False:
                 cpath = os.path.basename(inFile)[:-3]
-                cperc = int(100.0/filesToConvert) * (i+1)
+                cperc = int(100.0 / filesToConvert) * (i + 1)
                 
                 if settings["fullPath"]:
                     cpath = inFile[:-3]
@@ -309,8 +307,8 @@ def pynav(settings, userSettings):
                 for slcs in range(nSlices):
                     newSliceSize = settings["sliceSize"]
 
-                    if int(settings["sliceSize"]) > float(height)-(slcs*float(settings["sliceSize"])):
-                        newSliceSize = float(height)-(slcs*float(settings["sliceSize"]))                        
+                    if int(settings["sliceSize"]) > float(height) - (slcs * float(settings["sliceSize"])):
+                        newSliceSize = float(height) - (slcs * float(settings["sliceSize"]))                        
 
                     # change the output file name adding number for slice
                     ofile = outFile
@@ -319,10 +317,10 @@ def pynav(settings, userSettings):
                         ofile = "{0}_slice_{1}.{2}".format(outFile[:-4], str(slcs), settings["outputFormat"])
 
                     # generate output files
-                    crop = '{0}x{1}+{2}+{3}'.format(int(width), int(newSliceSize), 0, int(slcs*settings["sliceSize"]))
+                    crop = '{0}x{1}+{2}+{3}'.format(int(width), int(newSliceSize), 0, int(slcs * settings["sliceSize"]))
                     
                     # convert
-                    subprocess.call( [userSettings["convert_app"], '-quality', str(settings["quality"]), inFile, '-crop', crop, ofile], shell=False )
+                    subprocess.call([userSettings["convert_app"], '-quality', str(settings["quality"]), inFile, '-crop', crop, ofile], shell=False)
 
                     # generate html img tag to include into html file
                     imgTag.append(os.path.basename(ofile))
@@ -344,13 +342,13 @@ def pynav(settings, userSettings):
                     tags = tags.replace("[pynav-css]", customCss)
                     tags = tags.replace("[pynav-img-width]", width)
                     tags = tags.replace("[pynav-img-height]", height)
-                    tags = tags.replace("[pynav-next-html]", nextHtmlFile)                  
+                    tags = tags.replace("[pynav-next-html]", nextHtmlFile)
 
                     tags = tags.replace("[pynav-img]", imgTag[0])
                     
                     if nSlices > 1:
                         for j in range(nSlices-1):
-                            tags = tags.replace("[pynav-img-slice-{0}]".format(str(j+1)), imgTag[j+1])
+                            tags = tags.replace("[pynav-img-slice-{0}]".format(str(j + 1)), imgTag[j + 1])
             
                     html.write(tags)
                     html.close()
@@ -378,9 +376,9 @@ def pynav(settings, userSettings):
                     elapsedConvert = (time.clock() - startConvertFile)
                     print("{:03d} Converting {} to {} @ quality {} (OK) {} secs".format(int((100.0/filesToConvert)*(i+1)), inFile, outFile, str(settings["quality"]), round(elapsedConvert,2)), end="\n")                 
                 else:
-                    print("{:03d}% ... {} (OK)".format(int((100.0/filesToConvert)*(i+1)), inFile))
+                    print("{:03d}% ... {} (OK)".format(int((100.0/filesToConvert) * (i + 1)), inFile))
 
-                fileConverted = fileConverted+1
+                fileConverted = fileConverted + 1
 
             indexHTML += "<li><a href='{0}'>{1}</a></li>\n".format(os.path.basename(htmlsFullPath[i]), os.path.basename(outFile)[:-4])
     
@@ -532,10 +530,6 @@ except:
 \n      </body>\
 \n</html>"
 
-#
-#       Start the dance!
-#
-
 # Users Settings
 userSettings = {
         "convert_app": "C:/Program Files/Adobe/Adobe Photoshop CC (64 Bit)/convert.exe",
@@ -651,7 +645,8 @@ settings["desktopSheet"] = desktopSheet
 #settings["index"] = indexSheet
 
 if settings["html"]:
-    if os.path.isfile("{0}/{1}".format(os.getcwd(), settings["html"])):
+    settings["html"] = os.path.abspath(settings["html"])
+    if os.path.isfile(settings["html"]):
         htmlSheet = load_html_sheet(settings["html"])
         if htmlSheet:
             settings["mobileSheet"] = htmlSheet
