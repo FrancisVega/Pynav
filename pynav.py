@@ -35,10 +35,10 @@ import json
 
 SCRIPT_FILE_PATH = os.path.realpath(__file__)
 SCRIPT_DIR_PATH = os.path.dirname(SCRIPT_FILE_PATH)
-CONFIG_DIR_PATH = os.path.abspath("{0}/pynav-conf".format(SCRIPT_DIR_PATH))
-CONFIG_FILE_PATH = os.path.abspath("{0}/pynav.conf".format(CONFIG_DIR_PATH))
-DESKTOP_HTML_SHEET = os.path.abspath("{0}/pynav-desktop.html".format(CONFIG_DIR_PATH))
-MOBILE_HTML_SHEET =  os.path.abspath("{0}/pynav-mobile.html".format(CONFIG_DIR_PATH))
+CONFIG_DIR_PATH = os.path.join(SCRIPT_DIR_PATH, "pynav-conf")
+CONFIG_FILE_PATH = os.path.join(CONFIG_DIR_PATH, "pynav.conf")
+DESKTOP_HTML_SHEET = os.path.join(CONFIG_DIR_PATH, "pynav-desktop.html")
+MOBILE_HTML_SHEET = os.path.join(CONFIG_DIR_PATH, "pynav-mobile.html")
 INDEX_PAGE_NAME = "index.html"
 
 
@@ -59,20 +59,20 @@ def load_settings(settingDic):
         errprint("El archivo {0} no existe o no puede abrirse".format(CONFIG_FILE_PATH))
 
 
-def load_html_sheet(sheetFile):
+def load_html_template(file_tpl):
     """Returns a string with the content o file and check if file is a
     valid pynav html sheet.
 
     """
     try:
-        f = open(sheetFile, "r")
-        content = f.read()
-        f.close()
+        file_html = open(file_tpl, "r")
+        content = file_html.read()
+        file_html.close()
         if "[pynav-img]" not in content:
             return False
         return content
     except:
-        errprint("El archivo {0} no existe o no puede abrirse".format(sheetFile))
+        errprint("El archivo {0} no existe o no puede abrirse".format(file_tpl))
 
 
 def get_max_trail_number(baseName, dirList):
@@ -105,9 +105,9 @@ def resolve_conflict(myDir, dirPath):
         return myDir
 
 
-def get_files_from_folder(folder, imageFormat):
+def get_files_from_folder(folder, image_format):
     """Gets file list with custom extension."""
-    return [ os.path.join(folder, file) for file in os.listdir(folder) if os.path.isfile(os.path.join(folder, file))and file[-3:] == imageFormat]
+    return [ os.path.join(folder, file) for file in os.listdir(folder) if os.path.isfile(os.path.join(folder, file))and file[-3:] == image_format]
 
 
 def shift(seq, n):
@@ -253,12 +253,12 @@ def pynav(settings):
         # dest\original_name.html
         htmlsFullPath = ["{0}/{1}.html".format(pynav_dest, f) for f in [os.path.basename(f[:-4]) for f in sourceFiles]]
 
-    # pynav <a href> target htmls
+    # Pynav <a href> target htmls.
     tarHtmlsFullPath = shift(htmlsFullPath, 1)
 
     index_anchor_tag = ""
 
-    # Starts processing
+    # Starts convert process.
     print("", end="\n")
     print("Pynav. Francis Vega 2014", end="\n")
     print("Simple Navigation html+image from image files", end="\n")
@@ -296,7 +296,7 @@ def pynav(settings):
             inFile = sourceFiles[i]+'[0]' # add [0] to flatten psds for convert app
             outFile = imgsFullPath[i]
 
-            # If file exists and overwrite == False, skip.
+            # If file exists and overwrite == False, skip
             fileExists = os.path.isfile(outFile)
             if fileExists and pynav_overwrite == False:
                 path = os.path.basename(inFile)[:-3]
@@ -462,7 +462,7 @@ def pynav(settings):
 # html sheets
 
 try:
-    desktopSheet = load_html_sheet(DESKTOP_HTML_SHEET)
+    desktopSheet = load_html_template(DESKTOP_HTML_SHEET)
 except:
     desktopSheet ="\
 \n<!DOCTYPE html>\
@@ -482,7 +482,7 @@ except:
 \n</html>"
 
 try:
-    mobileSheet = load_html_sheet(MOBILE_HTML_SHEET)
+    mobileSheet = load_html_template(MOBILE_HTML_SHEET)
 except:
     mobileSheet = "\
 \n<!DOCTYPE html>\
@@ -555,8 +555,13 @@ PARSER.add_argument( "--html-sheet", "-html", nargs=1, dest="html", default="", 
 # PARSER.add_argument( "--log-file", "-l", dest="logfile", action="store_true", help="Create a log file" )
 # PARSER.add_argument( "--list-html-tags", "-tags", nargs=1, dest="html", default="", type=str, help="Show a list of pynav html tags")
 
-# Gets parse arguments
-args = PARSER.parse_args()
+# Parse arguments
+if __name__ == "__main__":
+    # DEBUG
+    pynav_args = ["--help"]
+    args = PARSER.parse_args(pynav_args)
+else:
+    args = PARSER.parse_args()
 
 # Pynav internal settings
 settings = {
@@ -625,7 +630,7 @@ settings["desktopSheet"] = desktopSheet
 if settings["html"]:
     settings["html"] = os.path.abspath(settings["html"])
     if os.path.isfile(settings["html"]):
-        htmlSheet = load_html_sheet(settings["html"])
+        htmlSheet = load_html_template(settings["html"])
         if htmlSheet:
             settings["mobileSheet"] = htmlSheet
             settings["desktopSheet"] = htmlSheet
