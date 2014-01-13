@@ -42,10 +42,17 @@ MOBILE_HTML_SHEET = os.path.join(CONFIG_DIR_PATH, "pynav-mobile.html")
 INDEX_PAGE_NAME = "index.html"
 
 
+def timming(f):
+    """Process timming decorator"""
+    start = time.clock()
+    def inner(*args, **kwargs):
+        f(*args, **kwargs)
+        print("Exe time for {0}(), {1:2f}".format(f.__name__, time.clock() - start))
+    return inner
+
 def errprint(msg):
     """Custom error printing."""
     print("\nERROR:", msg, end='\n', file=sys.stderr)
-
 
 def load_settings(settingDic):
     """Loads into settingDic the settings found in the config file."""
@@ -58,10 +65,9 @@ def load_settings(settingDic):
     except:
         errprint("El archivo {0} no existe o no puede abrirse".format(CONFIG_FILE_PATH))
 
-
 def load_html_template(file_tpl):
     """Returns a string with the content o file and check if file is a
-    valid pynav html sheet.
+    valid pynav html template.
 
     """
     try:
@@ -73,7 +79,6 @@ def load_html_template(file_tpl):
         return content
     except:
         errprint("El archivo {0} no existe o no puede abrirse".format(file_tpl))
-
 
 def get_max_trail_number(baseName, dirList):
     """Returns the maximun copy number (string) of an folder list based
@@ -92,29 +97,23 @@ def get_max_trail_number(baseName, dirList):
         # There is not folders with copy number, just the same folder name. Then max copy number = (1)
         return "1"
 
-
 def resolve_conflict(myDir, dirPath):
-    """Returns a new directory name with suffix (n) if original
-    exists.
-
-    """
+    """Returns a new directory name with suffix (n) if original exists."""
     listDir = get_list_dir(dirPath)
     if myDir in listDir:
         return get_max_trail_number(myDir, listDir)
     else:
         return myDir
 
-
 def get_files_from_folder(folder, image_format):
     """Gets file list with custom extension."""
-    return [ os.path.join(folder, file) for file in os.listdir(folder) if os.path.isfile(os.path.join(folder, file))and file[-3:] == image_format]
-
+    return [ os.path.join(folder, file) for file in os.listdir(folder)\
+        if os.path.isfile(os.path.join(folder, file)) and file[-3:] == image_format]
 
 def shift(seq, n):
     """Shifts list items by n."""
     n = n % len(seq)
     return seq[n:] + seq[:n]
-
 
 def get_image_size(fname):
     """Determines the image type of fhandle and return its size."""
@@ -152,7 +151,6 @@ def get_image_size(fname):
 
     return width, height
 
-
 def get_psd_size(fname):
     """Determines size of fname (psd)."""
     error = ""
@@ -170,11 +168,9 @@ def get_list_dir(path):
     """Returns List of folders."""
     return [d for d in os.listdir(path) if os.path.isdir(os.path.join(path, d))]
 
-
 def get_file_list(path):
     """Returns List of files."""
     return [d for d in os.listdir(path) if not os.path.isdir(os.path.join(path, d))]
-
 
 def zip(src, dst):
     """zip files in a src with dst name."""
@@ -189,12 +185,8 @@ def zip(src, dst):
         zf.write(os.path.abspath("{0}/{1}".format(abs_src, f)), os.path.basename(f))
     zf.close()
 
-
 def pynav(settings):
-    """Get user and private settings, convert files and generate
-    htmls.
-
-    """
+    """Get user and private settings, convert files and generate htmls."""
 
     # Dictionary items into vars.
     pynav_convert_app = settings["convert_app"]
@@ -231,60 +223,62 @@ def pynav(settings):
     # If the destination directory exists and not --ovwerwrite args,
     # Pynav will createa a directory_name(n) directory.
 
-    # Destination path exists and --overwrite=False
+    # Destination path exists and not --overwrite
     if os.path.exists(pynav_dest) == True and pynav_overwrite == False:
         trailNumber = resolve_conflict(os.path.basename(pynav_dest), pynav_dest.split(os.path.basename(pynav_dest))[0])
         pynav_dest = "{0}({1})".format(pynav_dest, trailNumber)
         os.makedirs(pynav_dest)
 
     # Destination path doesn't exists
-    if os.path.exists(pynav_dest) == False:
+    if not os.path.exists(pynav_dest):
         os.makedirs(pynav_dest)
 
     # Command user custon names
     if pynav_file_name != None:
         # dest\user_custom_file_name.jpg
-        imgsFullPath = ["{}/{}_{:02d}.{}".format(pynav_dest, pynav_file_name, n, pynav_output_format) for n in range(len(sourceFiles))]
+        imgsFullPath = [os.path.abspath("{}/{}_{:02d}.{}".format(pynav_dest, pynav_file_name, n, pynav_output_format))\
+            for n in range(len(sourceFiles))]
+
         # dest\user_custom_file_name.html
-        htmlsFullPath = ["{}/{}_{:02d}.html".format(pynav_dest, pynav_file_name, n) for n in range(len(sourceFiles))]
+        htmlsFullPath = [os.path.abspath("{}/{}_{:02d}.html".format(pynav_dest, pynav_file_name, n))\
+            for n in range(len(sourceFiles))]
     else:
         # dest\original_name.jpg
-        imgsFullPath = ["{0}/{1}.{2}".format(pynav_dest, f, pynav_output_format) for f in [os.path.basename(f[:-4]) for f in sourceFiles]]
-        # dest\original_name.html
-        htmlsFullPath = ["{0}/{1}.html".format(pynav_dest, f) for f in [os.path.basename(f[:-4]) for f in sourceFiles]]
+        imgsFullPath = [os.path.abspath("{0}/{1}.{2}".format(pynav_dest, f, pynav_output_format))\
+            for f in [os.path.basename(f[:-4]) for f in sourceFiles]]
 
-    # Pynav <a href> target htmls.
+        # dest\original_name.html
+        htmlsFullPath = [os.path.abspath("{0}/{1}.html".format(pynav_dest, f)) for f in [os.path.basename(f[:-4])\
+            for f in sourceFiles]]
+
+    # Pynav <a href> target htmls
     tarHtmlsFullPath = shift(htmlsFullPath, 1)
 
     index_anchor_tag = ""
 
-    # Starts convert process.
-    print("", end="\n")
-    print("Pynav. Francis Vega 2014", end="\n")
-    print("Simple Navigation html+image from image files", end="\n")
-    print("", end="\n")
+    # Starts convert process
+    print("\nPynav. Francis Vega 2014", end="\n")
+    print("Simple Navigation html+image from image files", end="\n\n")
 
-    # Verbose MODDE
+    # Verbose
     if pynav_verbose:
-        print("", end="\n")
         print("Convert formats: {0} to {1}".format(pynav_input_format, pynav_output_format), end="\n")
         print("Source Path {0}".format(pynav_src), end="\n")
-        print("Destination Path {0}".format(pynav_dest), end="\n")
-        print("", end="\n")
+        print("Destination Path {0}".format(pynav_dest), end="\n\n")
 
     try:
         fileConverted = 0
         filesToConvert = len(sourceFiles)
 
-        # Custom css style command
+        # --css-style
         customCss = ""
         if len(pynav_css) > 0:
             customCss = "/* CSS Style Command Inline*/\n{0}".format(pynav_css)
 
-        # Flush
+        # --flush
         if pynav_flush:
             for content in os.listdir(pynav_dest):
-                content = os.path.abspath("{0}/{1}".format(pynav_dest, content))
+                content = os.path.join(pynav_dest, content)
                 if os.path.isdir(content):
                     shutil.rmtree(content)
                 else:
@@ -293,7 +287,7 @@ def pynav(settings):
         # File by file
         for i in range(filesToConvert):
 
-            inFile = sourceFiles[i]+'[0]' # add [0] to flatten psds for convert app
+            inFile = "{0}[0]".format(sourceFiles[i]) # add [0] to flatten psds for convert app
             outFile = imgsFullPath[i]
 
             # If file exists and overwrite == False, skip
@@ -310,9 +304,9 @@ def pynav(settings):
             else:
                 # Select correct HTML Sheet
                 if pynav_mobile == True:
-                    Convert_HTML_sheet = pynav_mobl_tpl
+                    Convert_HTML_template = pynav_mobl_tpl
                 else:
-                    Convert_HTML_sheet = pynav_desk_tpl
+                    Convert_HTML_template = pynav_desk_tpl
 
                 # Get image or psd size
                 if pynav_input_format == "psd":
@@ -323,7 +317,6 @@ def pynav(settings):
                 width = str(size[0])
                 height = str(size[1])
 
-                # import math
                 nSlices = int(math.ceil(float(height) / pynav_slice_size))
 
                 imgTag = []
@@ -343,12 +336,15 @@ def pynav(settings):
                     crop = '{0}x{1}+{2}+{3}'.format(int(width), int(newSliceSize), 0, int(slcs * pynav_slice_size))
 
                     # convert
-                    subprocess.call([pynav_convert_app, '-quality', pynav_quality, inFile, '-crop', crop, ofile], shell=False)
+                    subprocess.call(
+                        [pynav_convert_app, '-quality', pynav_quality, inFile, '-crop', crop, ofile],
+                        shell=False
+                    )
 
-                    # generate html img tag to include into html file
+                    # Generate html img tag to include into html file
                     imgTag.append(os.path.basename(ofile))
 
-                # If only wants images == False
+                # Not --only-image
                 if pynav_only_image == False:
                     # Creates html file
                     htmlFile = htmlsFullPath[i]
@@ -359,8 +355,8 @@ def pynav(settings):
                     nextHtmlFile = os.path.basename(targetFile)
                     webImageFile = os.path.basename(outFile)
 
-                    # replace custom tags
-                    tags = Convert_HTML_sheet
+                    # Replace custom tags
+                    tags = Convert_HTML_template
                     tags = tags.replace("[pynav-title]", pynav_title)
                     tags = tags.replace("[pynav-css]", customCss)
                     tags = tags.replace("[pynav-img-width]", width)
@@ -394,11 +390,13 @@ def pynav(settings):
                     outFile = os.path.basename(outFile)
 
                 # Print info into terminal
-                print("{:03d}% ... {}".format(int((100.0/filesToConvert) * (i + 1)), inFile))
+                print("{:03d}% ... {}".format(int((100.0 / filesToConvert) * (i + 1)), inFile))
 
                 fileConverted = fileConverted + 1
 
-            index_anchor_tag += "<li><a href='{0}'>{1}</a></li>\n".format(os.path.basename(htmlsFullPath[i]), os.path.basename(outFile)[:-4])
+            index_anchor_tag += "<li><a href='{0}'>{1}</a></li>\n".format(\
+                os.path.basename(htmlsFullPath[i]), os.path.basename(outFile)[:-4]\
+            )
 
 
         indexHTML = u"<!--\
@@ -447,19 +445,21 @@ def pynav(settings):
     except:
         pass
 
-    # Index html file
+    # --index-of-pages
     if pynav_index:
         index = open(os.path.join(pynav_dest, INDEX_PAGE_NAME), "w")
         index.write(indexHTML)
         index.close()
 
+    # --zip
     if pynav_zip:
         zip_file_name = "{0}.zip".format(os.path.basename(pynav_dest))
         zip_path_name = os.path.join(pynav_dest, zip_file_name)
         zip(pynav_dest, zip_path_name)
         print("Mockup zipped at {0}".format(zip_path_name), end="\n\n")
 
-# html sheets
+
+# Html templates
 
 try:
     desktopSheet = load_html_template(DESKTOP_HTML_SHEET)
@@ -508,10 +508,10 @@ except:
 \n    </body>\
 \n</html>"
 
-# Users Settings
+# Pynav internal defatul settings
 userSettings = {
         "convert_app": "C:/Program Files/Adobe/Adobe Photoshop CC (64 Bit)/convert.exe",
-        "default_title": "Previz",
+        "default_title": "Pynav",
         "default_inputFormat": "psd",
         "default_outputFormat": "jpg",
         "default_outputDirName": "Pynav_",
@@ -551,14 +551,15 @@ PARSER.add_argument( "--slice", "-slc", nargs=1, dest="slice", default=userSetti
 PARSER.add_argument( "--css-style", "-style", nargs=1, dest="css", default="", type=str, help="Add css style to all html files")
 PARSER.add_argument( "--zip", "-z", dest="zip", action="store_true", help="Create a zip file with results files" )
 PARSER.add_argument( "--flush", "-f", dest="flush", action="store_true", help="Delete all the content in the destination folder" )
-PARSER.add_argument( "--html-sheet", "-html", nargs=1, dest="html", default="", type=str, help="Use a custom html file")
+PARSER.add_argument( "--html-template", "-html", nargs=1, dest="html", default="", type=str, help="Use a custom html file")
 # PARSER.add_argument( "--log-file", "-l", dest="logfile", action="store_true", help="Create a log file" )
 # PARSER.add_argument( "--list-html-tags", "-tags", nargs=1, dest="html", default="", type=str, help="Show a list of pynav html tags")
 
 # Parse arguments
-if __name__ == "__main__":
+DEBUG = False
+if DEBUG:
     # DEBUG
-    pynav_args = ["--help"]
+    pynav_args = ["--verbose", "--zip", "-m", "-slc", "1000", "--flush", "-q", "1", "-ow", "-index", ""]
     args = PARSER.parse_args(pynav_args)
 else:
     args = PARSER.parse_args()
@@ -622,7 +623,7 @@ if args.filename == None:
 else:
     settings["fileName"] = args.filename[0]
 
-# html sheet
+# Html template
 settings["mobileSheet"] = mobileSheet
 settings["desktopSheet"] = desktopSheet
 #settings["index"] = indexSheet
@@ -643,5 +644,3 @@ if settings["html"]:
 
 # Go with the flow!!
 pynav(settings)
-
-# :)
