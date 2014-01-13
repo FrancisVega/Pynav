@@ -66,10 +66,7 @@ def load_settings(settingDic):
         errprint("El archivo {0} no existe o no puede abrirse".format(CONFIG_FILE_PATH))
 
 def load_html_template(file_tpl):
-    """Returns a string with the content o file and check if file is a
-    valid pynav html template.
-
-    """
+    """Returns a string with the content of an valid pynav html template."""
     try:
         file_html = open(file_tpl, "r")
         content = file_html.read()
@@ -312,7 +309,7 @@ def pynav(settings):
                 if pynav_input_format == "psd":
                     size = get_psd_size(inFile[:-3])
                 else:
-                    size = get_image_size(inFile)
+                    size = get_image_size(inFile[:-3])
 
                 width = str(size[0])
                 height = str(size[1])
