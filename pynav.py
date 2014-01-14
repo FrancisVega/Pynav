@@ -115,36 +115,46 @@ def shift(seq, n):
 def get_image_size(fname):
     """Determines the image type of fhandle and return its size."""
     fhandle = open(fname, 'rb')
-    head = fhandle.read(24)
+    ext = os.path.splitext(fname)[1]
 
-    if len(head) != 24:
-        return
-    if imghdr.what(fname) == 'png':
-        check = struct.unpack('>i', head[4:8])[0]
-        if check != 0x0d0a1a0a:
+    if ext == ".psd":
+        fhandle.read(14)
+        (height, width) = struct.unpack("!LL", fhandle.read(8))
+        if width == 0 and height == 0:
             return
-        width, height = struct.unpack('>ii', head[16:24])
-    elif imghdr.what(fname) == 'gif':
-        width, height = struct.unpack('<HH', head[6:10])
-    elif imghdr.what(fname) == 'jpeg':
-        try:
-            fhandle.seek(0) # Read 0xff next
-            size = 2
-            ftype = 0
-            while not 0xc0 <= ftype <= 0xcf:
-                fhandle.seek(size, 1)
-                byte = fhandle.read(1)
-                while ord(byte) == 0xff:
-                    byte = fhandle.read(1)
-                ftype = ord(byte)
-                size = struct.unpack('>H', fhandle.read(2))[0] - 2
-            # We are at a SOFn block
-            fhandle.seek(1, 1)  # Skip `precision' byte.
-            height, width = struct.unpack('>HH', fhandle.read(4))
-        except Exception: #IGNORE:W0703
-            return
+        fhandle.close()
+        return width, height
+
     else:
-        return
+        head = fhandle.read(24)
+        if len(head) != 24:
+            return
+        if imghdr.what(fname) == 'png':
+            check = struct.unpack('>i', head[4:8])[0]
+            if check != 0x0d0a1a0a:
+                return
+            width, height = struct.unpack('>ii', head[16:24])
+        elif imghdr.what(fname) == 'gif':
+            width, height = struct.unpack('<HH', head[6:10])
+        elif imghdr.what(fname) == 'jpeg':
+            try:
+                fhandle.seek(0) # Read 0xff next
+                size = 2
+                ftype = 0
+                while not 0xc0 <= ftype <= 0xcf:
+                    fhandle.seek(size, 1)
+                    byte = fhandle.read(1)
+                    while ord(byte) == 0xff:
+                        byte = fhandle.read(1)
+                    ftype = ord(byte)
+                    size = struct.unpack('>H', fhandle.read(2))[0] - 2
+                # We are at a SOFn block
+                fhandle.seek(1, 1)  # Skip `precision' byte.
+                height, width = struct.unpack('>HH', fhandle.read(4))
+            except Exception: #IGNORE:W0703
+                return
+        else:
+            return
 
     return width, height
 
@@ -306,10 +316,12 @@ def pynav(settings):
                     Convert_HTML_template = pynav_desk_tpl
 
                 # Get image or psd size
-                if pynav_input_format == "psd":
-                    size = get_psd_size(inFile)
-                else:
-                    size = get_image_size(inFile)
+                # if pynav_input_format == "psd":
+                #     size = get_psd_size(inFile)
+                # else:
+                #     size = get_image_size(inFile)
+
+                size = get_image_size(inFile)
 
                 width = str(size[0])
                 height = str(size[1])
