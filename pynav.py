@@ -55,7 +55,7 @@ def errprint(msg):
     print("\nERROR:", msg, end='\n', file=sys.stderr)
 
 def load_settings(settingDic):
-    """Loads into settingDic the settings found in the config file."""
+    """Loads into setting Dic the settings found in the config file."""
     try:
         configFile = open(CONFIG_FILE_PATH, 'r')
         jsonConfigFile = json.load(configFile)
@@ -78,10 +78,7 @@ def load_html_template(file_tpl):
         errprint("El archivo {0} no existe o no puede abrirse".format(file_tpl))
 
 def get_max_trail_number(baseName, dirList):
-    """Returns the maximun copy number (string) of an folder list based
-    on a name.
-
-    """
+    """Returns the maximun copy number (string) of an folder list based on a name."""
     try:
         # There is folder(s) with trails (n)
         baseNameList = [d for d in dirList if d.startswith("{0}(".format(baseName))]
@@ -559,7 +556,7 @@ PARSER.add_argument( "--html-template", "-html", nargs=1, dest="html", default="
 DEBUG = False
 if DEBUG:
     # DEBUG
-    pynav_args = ["--verbose", "--zip", "-m", "-slc", "1000", "--flush", "-q", "1", "-ow", "-index", "/Users/Hisco/Dropbox/github/pynav/psd-project"]
+    pynav_args = ["--verbose", "--zip", "-m", "-slc", "1000", "--flush", "-q", "1", "-ow", "-index", ""]
     args = PARSER.parse_args(pynav_args)
 else:
     args = PARSER.parse_args()
