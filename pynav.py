@@ -284,17 +284,17 @@ def pynav(settings):
         # File by file
         for i in range(filesToConvert):
 
-            inFile = "{0}[0]".format(sourceFiles[i]) # add [0] to flatten psds for convert app
+            inFile = sourceFiles[i]
             outFile = imgsFullPath[i]
 
             # If file exists and overwrite == False, skip
             fileExists = os.path.isfile(outFile)
             if fileExists and pynav_overwrite == False:
-                path = os.path.basename(inFile)[:-3]
+                path = os.path.basename(inFile)
                 pct = int(100.0 / filesToConvert) * (i + 1)
 
                 if pynav_fullPath:
-                    path = inFile[:-3]
+                    path = inFile
 
                 print ("{:03d}% ... {} (Skip)".format(pct, path), end="\n")
 
@@ -307,9 +307,9 @@ def pynav(settings):
 
                 # Get image or psd size
                 if pynav_input_format == "psd":
-                    size = get_psd_size(inFile[:-3])
+                    size = get_psd_size(inFile)
                 else:
-                    size = get_image_size(inFile[:-3])
+                    size = get_image_size(inFile)
 
                 width = str(size[0])
                 height = str(size[1])
@@ -333,8 +333,12 @@ def pynav(settings):
                     crop = '{0}x{1}+{2}+{3}'.format(int(width), int(newSliceSize), 0, int(slcs * pynav_slice_size))
 
                     # convert
+                    if pynav_input_format == "psd":
+                        convertFile = "{0}[0]".format(inFile)
+                    else:
+                        convertFile = inFile
                     subprocess.call(
-                        [pynav_convert_app, '-quality', pynav_quality, inFile, '-crop', crop, ofile],
+                        [pynav_convert_app, '-quality', pynav_quality, convertFile, '-crop', crop, ofile],
                         shell=False
                     )
 
@@ -380,10 +384,9 @@ def pynav(settings):
                     os.remove(temporalHTML)
 
                 if pynav_fullPath:
-                    inFile = inFile[:-3]
                     outFile = outFile
                 else:
-                    inFile = os.path.basename(inFile)[:-3]
+                    inFile = os.path.basename(inFile)
                     outFile = os.path.basename(outFile)
 
                 # Print info into terminal
@@ -556,7 +559,7 @@ PARSER.add_argument( "--html-template", "-html", nargs=1, dest="html", default="
 DEBUG = False
 if DEBUG:
     # DEBUG
-    pynav_args = ["--verbose", "--zip", "-m", "-slc", "1000", "--flush", "-q", "1", "-ow", "-index", ""]
+    pynav_args = ["--verbose", "--zip", "-m", "-slc", "1000", "--flush", "-q", "1", "-ow", "-index", "/Users/Hisco/Dropbox/github/pynav/psd-project"]
     args = PARSER.parse_args(pynav_args)
 else:
     args = PARSER.parse_args()
