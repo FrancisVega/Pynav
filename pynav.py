@@ -114,7 +114,7 @@ def shift(seq, n):
 
 def get_image_size(fname):
     """Determines the image type of fhandle and return its size."""
-    fhandle = open(fname, 'rb')    
+    fhandle = open(fname, 'rb')
     ext = os.path.splitext(fname)[1]
 
     if ext == ".psd":
