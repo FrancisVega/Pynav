@@ -114,23 +114,6 @@ def shift(seq, n):
 
 def get_image_size(fname):
     """Determines the image type of fhandle and return its size."""
-<<<<<<< HEAD
-    fhandle = open(fname, 'rb')
-    ext = os.path.splitext(fname)[1]
-
-    if ext == ".psd":
-        fhandle.read(14)
-        (height, width) = struct.unpack("!LL", fhandle.read(8))
-        if width == 0 and height == 0:
-            return
-        fhandle.close()
-        return width, height
-
-    else:
-        head = fhandle.read(24)
-        if len(head) != 24:
-            return
-=======
     fhandle = open(fname, 'rb')    
     ext = os.path.splitext(fname)[1]
 
@@ -146,7 +129,6 @@ def get_image_size(fname):
         head = fhandle.read(24)
         if len(head) != 24:
             return
->>>>>>> c6de0952430df70144e6cf30f79d7d29ea663c90
         if imghdr.what(fname) == 'png':
             check = struct.unpack('>i', head[4:8])[0]
             if check != 0x0d0a1a0a:
