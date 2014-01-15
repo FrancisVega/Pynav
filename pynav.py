@@ -78,10 +78,7 @@ def load_html_template(file_tpl):
         errprint("El archivo {0} no existe o no puede abrirse".format(file_tpl))
 
 def get_max_trail_number(baseName, dirList):
-    """Returns the maximun copy number (string) of an folder list based
-    on a name.
-
-    """
+    """Returns the maximun copy number (string) of an folder list based on a name."""
     try:
         # There is folder(s) with trails (n)
         baseNameList = [d for d in dirList if d.startswith("{0}(".format(baseName))]
@@ -119,12 +116,8 @@ def get_image_size(fname):
 
     if ext == ".psd":
         fhandle.read(14)
-        (height, width) = struct.unpack("!LL", fhandle.read(8))
-        if width == 0 and height == 0:
-            return
+        height, width = struct.unpack("!LL", fhandle.read(8))
         fhandle.close()
-        return width, height
-
     else:
         head = fhandle.read(24)
         if len(head) != 24:
@@ -158,19 +151,6 @@ def get_image_size(fname):
 
     return width, height
 
-def get_psd_size(fname):
-    """Determines size of fname (psd)."""
-    error = ""
-    fhandle = open(fname, 'rb')
-    fhandle.read(14)
-    (height, width) = struct.unpack("!LL", fhandle.read(8))
-    if width == 0 and height == 0:
-        error = "no error"
-
-    fhandle.close()
-    return width, height
-
-
 def get_list_dir(path):
     """Returns List of folders."""
     return [d for d in os.listdir(path) if os.path.isdir(os.path.join(path, d))]
@@ -189,7 +169,7 @@ def zip(src, dst):
 
     zf = zipfile.ZipFile(dst, "w")
     for f in files:
-        zf.write(os.path.abspath("{0}/{1}".format(abs_src, f)), os.path.basename(f))
+        zf.write(os.path.join(abs_src, f), os.path.basename(f))
     zf.close()
 
 def pynav(settings):
@@ -349,7 +329,8 @@ def pynav(settings):
                         convertFile = "{0}[0]".format(inFile)
                     else:
                         convertFile = inFile
-                    subprocess.call(
+
+                    _k = subprocess.call(
                         [pynav_convert_app, '-quality', pynav_quality, convertFile, '-crop', crop, ofile],
                         shell=False
                     )
