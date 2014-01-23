@@ -295,12 +295,6 @@ def pynav(settings):
                 else:
                     Convert_HTML_template = pynav_desk_tpl
 
-                # Get image or psd size
-                # if pynav_input_format == "psd":
-                #     size = get_psd_size(inFile)
-                # else:
-                #     size = get_image_size(inFile)
-
                 size = get_image_size(inFile)
 
                 width = str(size[0])
@@ -308,7 +302,7 @@ def pynav(settings):
 
                 nSlices = int(math.ceil(float(height) / pynav_slice_size))
 
-                imgTag = []
+                slice_images = []
                 for slcs in range(nSlices):
                     newSliceSize = pynav_slice_size
 
@@ -325,24 +319,28 @@ def pynav(settings):
                     crop = '{0}x{1}+{2}+{3}'.format(int(width), int(newSliceSize), 0, int(slcs * pynav_slice_size))
 
                     # convert
+                    # hack adding [0] suffix to flat psd when call to convert app
                     if pynav_input_format == "psd":
                         convertFile = "{0}[0]".format(inFile)
                     else:
                         convertFile = inFile
 
-                    _k = subprocess.call(
+                    # call to convert app
+                    subprocess.call(
                         [pynav_convert_app, '-quality', pynav_quality, convertFile, '-crop', crop, ofile],
                         shell=False
                     )
 
                     # Generate html img tag to include into html file
-                    imgTag.append(os.path.basename(ofile))
+                    slice_images.append(os.path.basename(ofile))
 
-                # Not --only-image
+                # --only-image false
                 if pynav_only_image == False:
+
                     # Creates html file
                     htmlFile = htmlsFullPath[i]
                     targetFile = tarHtmlsFullPath[i]
+                    
                     html = open(htmlFile, "w")
 
                     # Html params
@@ -356,26 +354,27 @@ def pynav(settings):
                     tags = tags.replace("[pynav-img-width]", width)
                     tags = tags.replace("[pynav-img-height]", height)
                     tags = tags.replace("[pynav-next-html]", nextHtmlFile)
-                    tags = tags.replace("[pynav-img]", imgTag[0])
 
-                    if nSlices > 1:
-                        for j in range(nSlices-1):
-                            tags = tags.replace("[pynav-img-slice-{0}]".format(str(j + 1)), imgTag[j + 1])
+                    
+                    if pynav_mobile:
+                        # Replace [pynav-img] with multiples img tags in case of slicing
+                        # first, grab the whole <img> tag
+                        img_tag = re.search("<[^>]+\[pynav-img\][^>]+>", tags).group()
+                        
+                        multiple_slice_images_with_img_tag = ""
+                        for img in slice_images:
+                            multiple_slice_images_with_img_tag += img_tag.replace("[pynav-img]", img)
 
+                        # Add <img> tags to final data to write html file
+                        tags = tags.replace(img_tag, multiple_slice_images_with_img_tag)
+                    else:
+                        tags = tags.replace("[pynav-img]", slice_images[0])
+
+                    # Write html
                     html.write(tags)
                     html.close()
 
-                    # Remove [pynav-img-slice-n] tags
-                    temporalHTML = "{0}/tempo.html".format(pynav_dest)
-                    shutil.copy(htmlFile, temporalHTML)
-                    regex = re.compile('.*pynav-img-slice-.*')
-                    f = open(htmlFile, "w")
-                    map(lambda x: f.write(x), filter(lambda x: not regex.match(x), open(temporalHTML)))
-                    f.close()
-
-                    # Remove temporal file
-                    os.remove(temporalHTML)
-
+                # --full-path
                 if pynav_fullPath:
                     outFile = outFile
                 else:
@@ -549,10 +548,10 @@ PARSER.add_argument( "--html-template", "-html", nargs=1, dest="html", default="
 # PARSER.add_argument( "--list-html-tags", "-tags", nargs=1, dest="html", default="", type=str, help="Show a list of pynav html tags")
 
 # Parse arguments
-DEBUG = False
+DEBUG = True
 if DEBUG:
     # DEBUG
-    pynav_args = ["--verbose", "--zip", "-m", "-slc", "1000", "--flush", "-q", "1", "-ow", "-index", "/Users/Hisco/Dropbox/github/pynav/psd-project"]
+    pynav_args = ["--verbose", "--zip", "--flush", "-q", "1", "-ow", "-index", "E:\Dropbox\github\pynav\psd-project"]
     args = PARSER.parse_args(pynav_args)
 else:
     args = PARSER.parse_args()
