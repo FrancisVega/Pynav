@@ -1,7 +1,26 @@
+#!/usr/bin/env python
+# encoding: utf-8
+
+# Copyright (C) 2014 Francis Vega
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
 """Pynav.
 
 Usage:
-  pynav create <src> [<dst>] [-iwz] [--quality=QUALITY] [--output=FORMAT] [--input=FORMAT]
+  pynav create <src> [<dst>] [-iwm] [--quality=QUALITY] [--output=FORMAT] [--input=FORMAT]
                [--mobile] [--html=FILE] [--css=STYLE] [--title=TITLE] [--slice=SIZE] [--naming=PREFIX]
   pynav set [--quality=QUALITY]
 
@@ -22,7 +41,6 @@ Options:
   --version                     show version and exit
   -i --index                    Create a index.html containing all pages
   -w --overwrite                Overwrite existings files
-  -z --zip                      Archive output files
   -f --input=FORMAT             [default: psd]
   -o --output=FORMAT            [default: jpg]
   -q --quality=QUALITY          [default: 99]
@@ -32,7 +50,7 @@ Options:
   --slice=SIZE                  [default: 1024]
 
 Examples:
-  pynav create d:/Dropbox/Secuoyas/web/visual/ -iwz
+  pynav create d:/Dropbox/Secuoyas/web/visual/ -iwm
   pynav set --quality=20 --css=body { background: #000000; }
 
 """
@@ -44,7 +62,6 @@ import sys
 import time
 import shutil
 import subprocess
-import argparse
 import math
 import zipfile
 import re
@@ -158,33 +175,7 @@ def zip(src, dst):
         zf.write(os.path.join(abs_src, f), os.path.basename(f))
     zf.close()
 
-
-
-
-
-def pynav(src, dst, quality, input, output, mobile, title, overwrite, index, zip, slice, css, naming, desktopSheet, mobileSheet):
-
-    # Dictionary items into vars.
-    # pynav_convert_app = settings["convert_app"]
-    # pynav_quality = str(settings["quality"])
-    # pynav_input_format = str(settings["inputFormat"])
-    # pynav_output_format = str(settings["outputFormat"])
-    # pynav_mobile = settings["mobile"]
-    # pynav_title = str(settings["title"])
-    # pynav_overwrite = settings["overwrite"]
-    # pynav_verbose = settings["verbose"]
-    # pynav_fullPath = settings["fullPath"]
-    # pynav_index = settings["index"]
-    # pynav_zip = settings["zip"]
-    # pynav_only_image = settings["onlyimage"]
-    # pynav_flush = settings["flush"]
-    # pynav_slice_size = float(settings["sliceSize"])
-    # pynav_css = str(settings["css"])
-    # pynav_mobl_tpl = str(settings["mobileSheet"])
-    # pynav_desk_tpl = str(settings["desktopSheet"])
-    # pynav_dest = os.path.abspath(settings["destinationPath"])
-    # pynav_src = os.path.abspath(settings["sourcePath"])
-    # pynav_file_name = settings["fileName"]
+def pynav(src, dst, quality, input, output, mobile, title, overwrite, index, slice, css, naming, desktopSheet, mobileSheet):
 
     # Timing!
     start = time.clock()
@@ -193,40 +184,41 @@ def pynav(src, dst, quality, input, output, mobile, title, overwrite, index, zip
     if src: src = os.path.abspath(src)
     if dst: dst = os.path.abspath(dst)
 
-    # Set default dst if dst doesn't exists
+    # Set default dst if doesn't exists
     if not dst: dst = os.path.join(src, "Pynav_{0}".format(time.strftime("%Y-%m-%d")))
 
-    # Get source files with input format.
-    source_files = get_files_from_folder(src, input)
-    if not source_files:
+    # Get src files
+    try:
+        source_files = get_files_from_folder(src, input)
+    except:
         errprint("No existen archivos tipo {0} en el directorio {1}".format(input, src))
         sys.exit()
 
-    # <dst> dir creation.
+    # Create dst directory
     if not os.path.exists(dst):
         os.makedirs(dst)
 
+    # Image and Html file list
     # --naming
     if naming:
         imgs_full_path = [os.path.abspath("{}/{}_{:02d}.{}".format(dst, naming, n, output)) for n in range(len(source_files))]
         html_full_path = [os.path.abspath("{}/{}_{:02d}.html".format(dst, naming, n)) for n in range(len(source_files))]
-    else:        
+    else:
         imgs_full_path = [os.path.abspath("{0}/{1}.{2}".format(dst, f, output)) for f in [os.path.basename(f[:-4]) for f in source_files]]
         html_full_path = [os.path.abspath("{0}/{1}.html".format(dst, f)) for f in [os.path.basename(f[:-4]) for f in source_files]]
 
     # Pynav <a href> target htmls
     target_html_full_path = shift(html_full_path, 1)
 
+    #
     index_anchor_tag = ""
-    
+
     # Start
     print("\nPynav. Francis Vega 2014", end="\n")
     print("Simple Navigation html+image from image files", end="\n\n")
-    # Verbose
-    if True:
-        print("Convert formats: {0} to {1}".format(input, output), end="\n")
-        print("Source Path {0}".format(src), end="\n")
-        print("Destination Path {0}".format(dst), end="\n\n")
+    print("Convert formats: {0} to {1}".format(input, output), end="\n")
+    print("Source Path {0}".format(src), end="\n")
+    print("Destination Path {0}".format(dst), end="\n\n")
 
     try:
         file_converted = 0
@@ -237,19 +229,17 @@ def pynav(src, dst, quality, input, output, mobile, title, overwrite, index, zip
         if css:
             customCss = "/* CSS Style Command Inline*/\n{0}".format(css)
 
-        # File by file
+        # File
         for i in range(files_to_convert):
 
-            inFile = source_files[i]
-            outFile = imgs_full_path[i]
+            inFile = source_files[i] # psd
+            outFile = imgs_full_path[i] # jpg
 
-            # If file exists and overwrite == False, skip
-            fileExists = os.path.isfile(outFile)
-            if fileExists and overwrite == False:
+            # If outFile exists and not overwrite then skip
+            if os.path.isfile(outFile) and not overwrite:
                 path = os.path.basename(inFile)
                 pct = int(100.0 / files_to_convert) * (i + 1)
                 print ("{:03d}% ... {} (Skip)".format(pct, path), end="\n")
-
             else:
                 # Select correct HTML Sheet
                 if mobile:
@@ -257,30 +247,30 @@ def pynav(src, dst, quality, input, output, mobile, title, overwrite, index, zip
                 else:
                     Convert_HTML_template = desktopSheet
 
+                # Get image size
                 size = get_image_size(inFile)
-
                 width = str(size[0])
                 height = str(size[1])
 
-                nSlices = int(math.ceil(float(height) / slice))
+                # Calculate number of slices (minimun = 1)
+                n_slices = int(math.ceil(float(height) / slice))
 
+                # Slicing
                 slice_images = []
-                for slcs in range(nSlices):
-                    newSliceSize = slice
+                for slcs in range(n_slices):
+                    new_slice_size = slice
 
                     if int(slice) > float(height) - (slcs * slice):
-                        newSliceSize = float(height) - (slcs * slice)
+                        new_slice_size = float(height) - (slcs * slice)
 
                     # change the output file name adding number for slice
                     ofile = outFile
-
                     if slcs > 0:
                         ofile = "{0}_slice_{1}.{2}".format(outFile[:-4], str(slcs), output)
 
-                    # generate output files
-                    crop = '{0}x{1}+{2}+{3}'.format(int(width), int(newSliceSize), 0, int(slcs * slice))
+                    # generate crop for convert app
+                    crop = '{0}x{1}+{2}+{3}'.format(int(width), int(new_slice_size), 0, int(slcs * slice))
 
-                    # convert
                     # hack adding [0] suffix to flat psd when call to convert app
                     if input == "psd":
                         convertFile = "{0}[0]".format(inFile)
@@ -288,18 +278,15 @@ def pynav(src, dst, quality, input, output, mobile, title, overwrite, index, zip
                         convertFile = inFile
 
                     # call to convert app
-                    subprocess.call(
-                        [settings["convert_app"], '-quality', quality, convertFile, '-crop', crop, ofile],
-                        shell=False
-                    )
+                    subprocess.call([settings["convert_app"], '-quality', quality, convertFile, '-crop', crop, ofile], shell=False)
 
-                    # Generate html img tag to include into html file
+                    # Generate html img tags to include into html file
                     slice_images.append(os.path.basename(ofile))
 
                 # Creates html file
                 htmlFile = html_full_path[i]
                 targetFile = target_html_full_path[i]
-                
+
                 html = open(htmlFile, "w")
 
                 # Html params
@@ -314,12 +301,11 @@ def pynav(src, dst, quality, input, output, mobile, title, overwrite, index, zip
                 tags = tags.replace("[pynav-img-height]", height)
                 tags = tags.replace("[pynav-next-html]", nextHtmlFile)
 
-                
                 if mobile:
                     # Replace [pynav-img] with multiples img tags in case of slicing
                     # first, grab the whole <img> tag
                     img_tag = re.search("<[^>]+\[pynav-img\][^>]+>", tags).group()
-                    
+
                     multiple_slice_images_with_img_tag = ""
                     for img in slice_images:
                         multiple_slice_images_with_img_tag += img_tag.replace("[pynav-img]", img)
@@ -342,10 +328,7 @@ def pynav(src, dst, quality, input, output, mobile, title, overwrite, index, zip
 
                 file_converted = file_converted + 1
 
-            index_anchor_tag += "<li><a href='{0}'>{1}</a></li>\n".format(\
-                os.path.basename(html_full_path[i]), os.path.basename(outFile)[:-4]\
-            )
-
+            index_anchor_tag += "<li><a href='{0}'>{1}</a></li>\n".format(os.path.basename(html_full_path[i]), os.path.basename(outFile)[:-4])
 
         indexHTML = u"<!--\
 \n\
@@ -453,12 +436,13 @@ except:
 
 # Fill user settings with some default
 settings = {
-        "convert_app": "C:/Program Files/Adobe/Adobe Photoshop CC (64 Bit)/convert.exe",
+        #"convert_app": "C:/Program Files/Adobe/Adobe Photoshop CC (64 Bit)/convert.exe",
+        "convert_app":"convert",
         "dir_name": "Pynav_"
 }
 
-# settings = docopt(__doc__, version='Pynav 0.1')
-args = docopt(__doc__, argv="create E:/Dropbox/github/pynav/psd-project -iwm -q80", version='Pynav 0.1')
+args = docopt(__doc__, version='Pynav 0.1')
+#args = docopt(__doc__, argv="create /Users/Hisco/Dropbox/github/pynav/psd-project -iwm -q80", version='Pynav 0.1')
 
 # set defaults
 if not args["--title"]:
@@ -474,7 +458,6 @@ pynav(
     args["--title"],
     args["--overwrite"],
     args["--index"],
-    args["--zip"],
     float(args["--slice"]),
     args["--css"],
     args["--naming"],
