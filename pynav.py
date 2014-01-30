@@ -22,11 +22,11 @@
 Usage:
   pynav create <src> [<dst>] [-iwmz] [--quality=QUALITY] [--output=FORMAT] [--input=FORMAT]
                [--html=FILE] [--css=STYLE] [--title=TITLE] [--slice=SIZE] [--naming=SUFFIX]
-  pynav set [--quality=QUALITY]
+  pynav check
 
 Commands:
   create                        Main command to create navigation
-  set                           Command to write default values into config file
+  check                         Check config files and script integrity
 
 Arguments:
   <src>                         Source directory with image files
@@ -62,7 +62,6 @@ from docopt import docopt
 import os
 import sys
 import time
-import shutil
 import subprocess
 import math
 import zipfile
@@ -78,12 +77,14 @@ CONFIG_DIR_PATH = os.path.join(SCRIPT_DIR_PATH, "pynav-conf")
 CONFIG_FILE_PATH = os.path.join(CONFIG_DIR_PATH, "pynav.conf")
 DESKTOP_HTML_SHEET = os.path.join(CONFIG_DIR_PATH, "pynav-desktop.html")
 MOBILE_HTML_SHEET = os.path.join(CONFIG_DIR_PATH, "pynav-mobile.html")
+INDEX_HTML_SHEET = os.path.join(CONFIG_DIR_PATH, "pynav-index.html")
 INDEX_PAGE_NAME = "index.html"
 
 
 def errprint(msg):
     """Custom error printing."""
     print("\nERROR:", msg, end='\n', file=sys.stderr)
+    sys.exit()
 
 def load_template(file_tpl):
     """Returns a string with the content of an valid pynav html template."""
@@ -91,7 +92,7 @@ def load_template(file_tpl):
         file_html = open(file_tpl, "r")
         content = file_html.read()
         file_html.close()
-        if "[pynav-img]" not in content:
+        if "[pynav-" not in content:
             return False
         return content
     except:
@@ -170,7 +171,7 @@ def zip(src, dst):
         zf.write(os.path.join(abs_src, f), os.path.basename(f))
     zf.close()
 
-def pynav(src, dst, quality, input, output, mobile, title, overwrite, index, slice, css, naming, zippy, desktop_HTML_tmpl, mobileSheet_HTML_tmpl):
+def pynav(src, dst, quality, input, output, mobile, title, overwrite, index, slice, css, naming, zippy, desktop_HTML_tmpl, mobile_HTML_tmpl):
 
     # Timing!
     start = time.clock()
@@ -186,8 +187,7 @@ def pynav(src, dst, quality, input, output, mobile, title, overwrite, index, sli
     try:
         source_files = get_files_from_folder(src, input)
     except:
-        errprint("No existen archivos tipo {0} en el directorio {1}".format(input, src))
-        sys.exit()
+        errprint("No existen archivos tipo {0} en el directorio {1}".format(input, src))        
 
     # Create dst directory if not exists
     if not os.path.exists(dst):
@@ -220,28 +220,28 @@ def pynav(src, dst, quality, input, output, mobile, title, overwrite, index, sli
         files_to_convert = len(source_files)
 
         # --css-style
-        customCss = ""
+        custom_css = ""
         if css:
-            customCss = "/* CSS Style Command Inline*/\n{0}".format(css)
+            custom_css = "/* CSS Style Command Inline*/\n{0}".format(css)
 
         # File by file
         for i in range(files_to_convert):
 
-            inFile = source_files[i] # psd
-            outFile = imgs_full_path[i] # jpg
+            in_file = source_files[i] # psd
+            out_file = imgs_full_path[i] # jpg
 
-            # If outFile exists and not --overwrite then skip
-            if os.path.isfile(outFile) and not overwrite:
-                path = os.path.basename(inFile)
+            # If out_file exists and not --overwrite then skip
+            if os.path.isfile(out_file) and not overwrite:
+                path = os.path.basename(in_file)
                 pct = int(100.0 / files_to_convert) * (i + 1)
                 print ("{:03d}% ... {} (Skip)".format(pct, path), end="\n")
-            # If outFile does't exists or exists but --overwrite:
+            # If out_file does't exists or exists but --overwrite:
             else:
                 # Select correct HTML Sheet
-                HTML_tmpl = mobileSheet_HTML_tmpl if mobile == True else desktop_HTML_tmpl
+                HTML_tmpl = mobile_HTML_tmpl if mobile == True else desktop_HTML_tmpl
 
                 # Get image size
-                size = get_image_size(inFile)
+                size = get_image_size(in_file)
                 width = str(size[0])
                 height = str(size[1])
 
@@ -257,18 +257,18 @@ def pynav(src, dst, quality, input, output, mobile, title, overwrite, index, sli
                         new_slice_size = float(height) - (slcs * slice)
 
                     # change the output file name adding number for slice
-                    ofile = outFile
+                    ofile = out_file
                     if slcs > 0:
-                        ofile = "{0}_slice_{1}.{2}".format(outFile[:-4], str(slcs), output)
+                        ofile = "{0}_slice_{1}.{2}".format(out_file[:-4], str(slcs), output)
 
                     # generate crop for convert app
                     crop = '{0}x{1}+{2}+{3}'.format(int(width), int(new_slice_size), 0, int(slcs * slice))
                     
                     # hack adding [0] suffix to flat psd when call to convert app
                     if input == "psd":
-                        convertFile = "{0}[0]".format(inFile)
+                        convertFile = "{0}[0]".format(in_file)
                     else:
-                        convertFile = inFile
+                        convertFile = in_file
 
                     # call to convert app
                     subprocess.call([settings["convert_app"], '-quality', quality, convertFile, '-crop', crop, ofile], shell=True)
@@ -284,19 +284,19 @@ def pynav(src, dst, quality, input, output, mobile, title, overwrite, index, sli
 
                 # Html params
                 nextHtmlFile = os.path.basename(targetFile)
-                webImageFile = os.path.basename(outFile)
+                webImageFile = os.path.basename(out_file)
 
-                # Replace custom tags
+                # Replace custom tags with real content
                 tags = HTML_tmpl
                 tags = tags.replace("[pynav-title]", title)
-                tags = tags.replace("[pynav-css]", "CSS")
+                tags = tags.replace("[pynav-css]", custom_css)
                 tags = tags.replace("[pynav-img-width]", width)
                 tags = tags.replace("[pynav-img-height]", height)
                 tags = tags.replace("[pynav-next-html]", nextHtmlFile)
 
                 if mobile:
                     # Replace [pynav-img] with multiples img tags in case of slicing
-                    # first, grab the whole <img> tag
+                    # First, grab the whole <img> tag
                     img_tag = re.search("<[^>]+\[pynav-img\][^>]+>", tags).group()
 
                     multiple_slice_images_with_img_tag = ""
@@ -313,66 +313,36 @@ def pynav(src, dst, quality, input, output, mobile, title, overwrite, index, sli
                 html.close()
 
                 # --full-path
-                inFile = os.path.basename(inFile)
-                outFile = os.path.basename(outFile)
+                in_file = os.path.basename(in_file)
+                out_file = os.path.basename(out_file)
 
                 # Print info into terminal
-                print("{:03d}% ... {}".format(int((100.0 / files_to_convert) * (i + 1)), inFile))
+                print("{:03d}% ... {}".format(int((100.0 / files_to_convert) * (i + 1)), in_file))
 
-                file_converted = file_converted + 1
+                file_converted += 1
 
-            index_anchor_tag += "<li><a href='{0}'>{1}</a></li>\n".format(os.path.basename(html_full_path[i]), os.path.basename(outFile)[:-4])
+            index_anchor_tag += "<li><a href='{0}'>{1}</a></li>\n".format(os.path.basename(html_full_path[i]), os.path.basename(out_file)[:-4])
 
-        indexHTML = u"<!--\
-\n\
-\n    Pynav 2014\
-\n    Francis Vega\
-\n\
-\n    hisco@inartx.com\
-\n-->\
-\n\
-\n<!DOCTYPE html>\
-\n<html>\
-\n    <head>\
-\n    <title>Index of {0}</title>\
-\n    <style>\
-\n        * {{ font-family: Arial; border: 0; margin: 0; padding: 0; }}\
-\n        a {{ color: black; text-decoration: none; }}\
-\n        a:visited {{ color: inherit; }}\
-\n        a:hover {{ color: black; font-weight: bold; }}\
-\n        h1 {{ margin: 20px 0 0 20px; }}\
-\n        li {{ line-height: 1.6; }}\
-\n        ul {{ list-style: none; margin: 20px 0 0 20px; }}\
-\n        {1}\
-\n    </style>\
-\n    </head>\
-\n    <body>\
-\n    <h1>Index of {0}</h1>\
-\n    <ul>\
-\n        {2}\
-\n    </ul>\
-\n    </body>\
-\n</html>".format(title, customCss, index_anchor_tag)
+        # Replace custom tags with real content
+        index_html = load_template(INDEX_HTML_SHEET)
+        tags = index_html
+        tags = tags.replace("[pynav-title]", title)
+        tags = tags.replace("[pynav-css]", custom_css)
+        tags = tags.replace("[pynav-page-link]", index_anchor_tag)
+        index_html = tags
 
     except KeyboardInterrupt:
-        print("", end="\n")
-        print("\nInterrupted by a user", end="\n")
+        errprint("Interrupted by a user")
 
     elapsed = (time.clock() - start)
     print("", end="\n")
     print("{0} files converted in {1} seconds".format(str(file_converted), str(round(elapsed,2))), end="\n\n")
     print("Mockup finished at {0}".format(os.path.abspath(dst)), end="\n\n")
 
-    # Removes the temporal folder
-    try:
-        shutil.rmtree(tmp)
-    except:
-        pass
-
     # --index-of-pages
     if index:
         index = open(os.path.join(dst, INDEX_PAGE_NAME), "w")
-        index.write(indexHTML)
+        index.write(index_html)
         index.close()
 
     # --zip
@@ -384,48 +354,8 @@ def pynav(src, dst, quality, input, output, mobile, title, overwrite, index, sli
 
 
 # Html templates
-
-try:
-    desktop_HTML_tmpl = load_template(DESKTOP_HTML_SHEET)
-except:
-    desktop_HTML_tmpl ="\
-\n<!DOCTYPE html>\
-\n<html>\
-\n    <head>\
-\n    <title>[pynav-title]</title>\
-\n    <style>\
-\n        /* Pynav default style */\
-\n        * { padding: 0; margin: 0; }\
-\n        div { margin: 0 auto; background: url('[pynav-img]') top center no-repeat; height: [pynav-img-height]px; width: [pynav-img-width]px; }\
-\n        [pynav-css]\
-\n    </style>\
-\n    </head>\
-\n    <body>\
-\n        <a href='[pynav-next-html]'><div></div></a>\
-\n    </body>\
-\n</html>"
-
-try:
-    mobileSheet_HTML_tmpl = load_template(MOBILE_HTML_SHEET)
-except:
-    mobileSheet_HTML_tmpl = "\
-\n<!DOCTYPE html>\
-\n<html>\
-\n    <head>\
-\n    <title>[pynav-title]</title>\
-\n    <style>\
-\n        /* Pynav default style */\
-\n        * { padding: 0; margin: 0; }\
-\n        img { width: 100%; height: auto; display: block;}\
-\n        [pynav-css]\
-\n    </style>\
-\n    </head>\
-\n    <body>\
-\n        <a href='[pynav-next-html]'>\
-\n            <img src='[pynav-img]'>\
-\n        </a>\
-\n    </body>\
-\n</html>"
+desktop_HTML_tmpl = load_template(DESKTOP_HTML_SHEET)
+mobile_HTML_tmpl = load_template(MOBILE_HTML_SHEET)
 
 # Fill user settings with some default
 settings = {
@@ -437,20 +367,31 @@ settings = {
 args = docopt(__doc__, version='Pynav 0.1')
 # args = docopt(__doc__, argv="create E:/Dropbox/github/pynav/psd-project E:/Dropbox/github/pynav/psd-project/jandler -izmw -q80", version='Pynav 0.1')
 
-pynav(
-    args["<src>"],
-    args["<dst>"],
-    args["--quality"],
-    args["--input"],
-    args["--output"],
-    args["--mobile"],
-    args["--title"],
-    args["--overwrite"],
-    args["--index"],
-    float(args["--slice"]),
-    args["--css"],
-    args["--naming"],
-    args["--zip"],
-    desktop_HTML_tmpl,
-    mobileSheet_HTML_tmpl
-)
+# Commands
+if args["create"]:
+    pynav(
+        args["<src>"],
+        args["<dst>"],
+        args["--quality"],
+        args["--input"],
+        args["--output"],
+        args["--mobile"],
+        args["--title"],
+        args["--overwrite"],
+        args["--index"],
+        float(args["--slice"]),
+        args["--css"],
+        args["--naming"],
+        args["--zip"],
+        desktop_HTML_tmpl,
+        mobile_HTML_tmpl
+    )
+
+elif args["check"]:
+    print("\n  Pynav checking...\n")
+    _tmp = load_template(DESKTOP_HTML_SHEET)
+    _tmp = load_template(MOBILE_HTML_SHEET)
+    print("  All seems ok")
+
+elif args["set"]:
+    print("Set command")
