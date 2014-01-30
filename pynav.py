@@ -100,8 +100,10 @@ def load_template(file_tpl):
 
 def get_files_from_folder(folder, image_format):
     """Gets file list with custom extension."""
-    return [ os.path.join(folder, file) for file in os.listdir(folder)\
-        if os.path.isfile(os.path.join(folder, file)) and file[-3:] == image_format]
+    try:
+        return [ os.path.join(folder, file) for file in os.listdir(folder) if os.path.isfile(os.path.join(folder, file)) and file[-3:] == image_format]
+    except:
+        errprint("No existen archivos tipo {0} en el directorio {1}".format(image_format, folder))     
 
 def shift(seq, n):
     """Shifts list items by n."""
@@ -184,10 +186,7 @@ def pynav(src, dst, quality, input, output, mobile, title, overwrite, index, sli
     if not dst: dst = os.path.join(src, "Pynav_{0}".format(time.strftime("%Y-%m-%d")))
 
     # Get src files
-    try:
-        source_files = get_files_from_folder(src, input)
-    except:
-        errprint("No existen archivos tipo {0} en el directorio {1}".format(input, src))        
+    source_files = get_files_from_folder(src, input)        
 
     # Create dst directory if not exists
     if not os.path.exists(dst):
@@ -205,8 +204,8 @@ def pynav(src, dst, quality, input, output, mobile, title, overwrite, index, sli
     # Pynav <a href> target htmls
     target_html_full_path = shift(html_full_path, 1)
 
-    #
-    index_anchor_tag = ""
+    # All links <a> pages for index.html
+    index_page_links = ""
 
     # Start
     print("\nPynav. Francis Vega 2014", end="\n")
@@ -215,6 +214,7 @@ def pynav(src, dst, quality, input, output, mobile, title, overwrite, index, sli
     print("Source Path {0}".format(src), end="\n")
     print("Destination Path {0}".format(dst), end="\n\n")
 
+    # Try - except to capture ctrl+c
     try:
         file_converted = 0
         files_to_convert = len(source_files)
@@ -321,14 +321,14 @@ def pynav(src, dst, quality, input, output, mobile, title, overwrite, index, sli
 
                 file_converted += 1
 
-            index_anchor_tag += "<li><a href='{0}'>{1}</a></li>\n".format(os.path.basename(html_full_path[i]), os.path.basename(out_file)[:-4])
+            index_page_links += "<li><a href='{0}'>{1}</a></li>\n".format(os.path.basename(html_full_path[i]), os.path.basename(out_file)[:-4])
 
         # Replace custom tags with real content
         index_html = load_template(INDEX_HTML_SHEET)
         tags = index_html
         tags = tags.replace("[pynav-title]", title)
         tags = tags.replace("[pynav-css]", custom_css)
-        tags = tags.replace("[pynav-page-link]", index_anchor_tag)
+        tags = tags.replace("[pynav-page-link]", index_page_links)
         index_html = tags
 
     except KeyboardInterrupt:
