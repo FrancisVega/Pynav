@@ -20,8 +20,8 @@
 """Pynav.
 
 Usage:
-  pynav create <src> [<dst>] [-iwm] [--quality=QUALITY] [--output=FORMAT] [--input=FORMAT]
-               [--mobile] [--html=FILE] [--css=STYLE] [--title=TITLE] [--slice=SIZE] [--naming=PREFIX]
+  pynav create <src> [<dst>] [-iwmz] [--quality=QUALITY] [--output=FORMAT] [--input=FORMAT]
+               [--html=FILE] [--css=STYLE] [--title=TITLE] [--slice=SIZE] [--naming=SUFFIX]
   pynav set [--quality=QUALITY]
 
 Commands:
@@ -37,17 +37,19 @@ Arguments:
   FORMAT                        Image format (jpg|png)
 
 Options:
-  -h --help                     show this help message and exit
-  --version                     show version and exit
+  -h --help                     Show this help message and exit
+  -v --version                  Show version and exit
   -i --index                    Create a index.html containing all pages
   -w --overwrite                Overwrite existings files
   -f --input=FORMAT             [default: psd]
   -o --output=FORMAT            [default: jpg]
-  -q --quality=QUALITY          [default: 99]
-  -m --mobile                   Modes [default: img]
+  -q --quality=QUALITY          [default: 100]
+  -m --mobile                   Create htmls with image-width at 100%
+  -z --zip                      Zip output files
+  --title=TITLE                 Title of htmls [default: Navigation]
   --html=FILE                   Use FILE (html) template
   --css=STYLE                   Add custom css styles
-  --slice=SIZE                  [default: 1024]
+  --slice=SIZE                  Max image height size [default: 8192]
 
 Examples:
   pynav create d:/Dropbox/Secuoyas/web/visual/ -iwm
@@ -69,6 +71,7 @@ import imghdr
 import struct
 import json
 
+
 SCRIPT_FILE_PATH = os.path.realpath(__file__)
 SCRIPT_DIR_PATH = os.path.dirname(SCRIPT_FILE_PATH)
 CONFIG_DIR_PATH = os.path.join(SCRIPT_DIR_PATH, "pynav-conf")
@@ -77,14 +80,6 @@ DESKTOP_HTML_SHEET = os.path.join(CONFIG_DIR_PATH, "pynav-desktop.html")
 MOBILE_HTML_SHEET = os.path.join(CONFIG_DIR_PATH, "pynav-mobile.html")
 INDEX_PAGE_NAME = "index.html"
 
-
-def timming(f):
-    """Process timming decorator"""
-    start = time.clock()
-    def inner(*args, **kwargs):
-        f(*args, **kwargs)
-        print("Exe time for {0}(), {1:2f}".format(f.__name__, time.clock() - start))
-    return inner
 
 def errprint(msg):
     """Custom error printing."""
@@ -175,12 +170,12 @@ def zip(src, dst):
         zf.write(os.path.join(abs_src, f), os.path.basename(f))
     zf.close()
 
-def pynav(src, dst, quality, input, output, mobile, title, overwrite, index, slice, css, naming, desktopSheet, mobileSheet):
+def pynav(src, dst, quality, input, output, mobile, title, overwrite, index, slice, css, naming, zippy, desktop_HTML_tmpl, mobileSheet_HTML_tmpl):
 
     # Timing!
     start = time.clock()
 
-    # Setup paths
+    # Setup paths with abspath
     if src: src = os.path.abspath(src)
     if dst: dst = os.path.abspath(dst)
 
@@ -194,12 +189,12 @@ def pynav(src, dst, quality, input, output, mobile, title, overwrite, index, sli
         errprint("No existen archivos tipo {0} en el directorio {1}".format(input, src))
         sys.exit()
 
-    # Create dst directory
+    # Create dst directory if not exists
     if not os.path.exists(dst):
         os.makedirs(dst)
 
     # Image and Html file list
-    # --naming
+    # --naming (name_00.ext, name_01.ext...)
     if naming:
         imgs_full_path = [os.path.abspath("{}/{}_{:02d}.{}".format(dst, naming, n, output)) for n in range(len(source_files))]
         html_full_path = [os.path.abspath("{}/{}_{:02d}.html".format(dst, naming, n)) for n in range(len(source_files))]
@@ -229,23 +224,21 @@ def pynav(src, dst, quality, input, output, mobile, title, overwrite, index, sli
         if css:
             customCss = "/* CSS Style Command Inline*/\n{0}".format(css)
 
-        # File
+        # File by file
         for i in range(files_to_convert):
 
             inFile = source_files[i] # psd
             outFile = imgs_full_path[i] # jpg
 
-            # If outFile exists and not overwrite then skip
+            # If outFile exists and not --overwrite then skip
             if os.path.isfile(outFile) and not overwrite:
                 path = os.path.basename(inFile)
                 pct = int(100.0 / files_to_convert) * (i + 1)
                 print ("{:03d}% ... {} (Skip)".format(pct, path), end="\n")
+            # If outFile does't exists or exists but --overwrite:
             else:
                 # Select correct HTML Sheet
-                if mobile:
-                    Convert_HTML_template = mobileSheet
-                else:
-                    Convert_HTML_template = desktopSheet
+                HTML_tmpl = mobileSheet_HTML_tmpl if mobile == True else desktop_HTML_tmpl
 
                 # Get image size
                 size = get_image_size(inFile)
@@ -270,7 +263,7 @@ def pynav(src, dst, quality, input, output, mobile, title, overwrite, index, sli
 
                     # generate crop for convert app
                     crop = '{0}x{1}+{2}+{3}'.format(int(width), int(new_slice_size), 0, int(slcs * slice))
-
+                    
                     # hack adding [0] suffix to flat psd when call to convert app
                     if input == "psd":
                         convertFile = "{0}[0]".format(inFile)
@@ -278,7 +271,7 @@ def pynav(src, dst, quality, input, output, mobile, title, overwrite, index, sli
                         convertFile = inFile
 
                     # call to convert app
-                    subprocess.call([settings["convert_app"], '-quality', quality, convertFile, '-crop', crop, ofile], shell=False)
+                    subprocess.call([settings["convert_app"], '-quality', quality, convertFile, '-crop', crop, ofile], shell=True)
 
                     # Generate html img tags to include into html file
                     slice_images.append(os.path.basename(ofile))
@@ -294,7 +287,7 @@ def pynav(src, dst, quality, input, output, mobile, title, overwrite, index, sli
                 webImageFile = os.path.basename(outFile)
 
                 # Replace custom tags
-                tags = Convert_HTML_template
+                tags = HTML_tmpl
                 tags = tags.replace("[pynav-title]", title)
                 tags = tags.replace("[pynav-css]", "CSS")
                 tags = tags.replace("[pynav-img-width]", width)
@@ -383,7 +376,7 @@ def pynav(src, dst, quality, input, output, mobile, title, overwrite, index, sli
         index.close()
 
     # --zip
-    if zip:
+    if zippy:
         zip_file_name = "{0}.zip".format(os.path.basename(dst))
         zip_path_name = os.path.join(dst, zip_file_name)
         zip(dst, zip_path_name)
@@ -393,9 +386,9 @@ def pynav(src, dst, quality, input, output, mobile, title, overwrite, index, sli
 # Html templates
 
 try:
-    desktopSheet = load_template(DESKTOP_HTML_SHEET)
+    desktop_HTML_tmpl = load_template(DESKTOP_HTML_SHEET)
 except:
-    desktopSheet ="\
+    desktop_HTML_tmpl ="\
 \n<!DOCTYPE html>\
 \n<html>\
 \n    <head>\
@@ -413,9 +406,9 @@ except:
 \n</html>"
 
 try:
-    mobileSheet = load_template(MOBILE_HTML_SHEET)
+    mobileSheet_HTML_tmpl = load_template(MOBILE_HTML_SHEET)
 except:
-    mobileSheet = "\
+    mobileSheet_HTML_tmpl = "\
 \n<!DOCTYPE html>\
 \n<html>\
 \n    <head>\
@@ -436,17 +429,13 @@ except:
 
 # Fill user settings with some default
 settings = {
-        #"convert_app": "C:/Program Files/Adobe/Adobe Photoshop CC (64 Bit)/convert.exe",
-        "convert_app":"convert",
+        "convert_app": "C:/Program Files/Adobe/Adobe Photoshop CC (64 Bit)/convert.exe",
+        # "convert_app":"convert",
         "dir_name": "Pynav_"
 }
 
 args = docopt(__doc__, version='Pynav 0.1')
-#args = docopt(__doc__, argv="create /Users/Hisco/Dropbox/github/pynav/psd-project -iwm -q80", version='Pynav 0.1')
-
-# set defaults
-if not args["--title"]:
-    args["--title"] = "custom_title"
+# args = docopt(__doc__, argv="create E:/Dropbox/github/pynav/psd-project E:/Dropbox/github/pynav/psd-project/jandler -izmw -q80", version='Pynav 0.1')
 
 pynav(
     args["<src>"],
@@ -461,6 +450,7 @@ pynav(
     float(args["--slice"]),
     args["--css"],
     args["--naming"],
-    desktopSheet,
-    mobileSheet
+    args["--zip"],
+    desktop_HTML_tmpl,
+    mobileSheet_HTML_tmpl
 )
