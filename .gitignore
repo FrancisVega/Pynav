@@ -3,4 +3,4 @@ psd-project
 versions
 libs
 .DS_Store
-*.pyc
+docopt.pyc
