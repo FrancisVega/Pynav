@@ -353,6 +353,11 @@ def pynav(src, dst, quality, input, output, mobile, title, overwrite, index, sli
         print("Mockup zipped at {0}".format(zip_path_name), end="\n\n")
 
 
+
+#
+# -- Main
+#
+
 # Html templates
 desktop_HTML_tmpl = load_template(DESKTOP_HTML_SHEET)
 mobile_HTML_tmpl = load_template(MOBILE_HTML_SHEET)
@@ -365,7 +370,7 @@ settings = {
 }
 
 args = docopt(__doc__, version='Pynav 0.1')
-# args = docopt(__doc__, argv="create E:/Dropbox/github/pynav/psd-project E:/Dropbox/github/pynav/psd-project/jandler -izmw -q80", version='Pynav 0.1')
+# args = docopt(__doc__, argv="")
 
 # Commands
 if args["create"]:
