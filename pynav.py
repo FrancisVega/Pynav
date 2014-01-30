@@ -548,7 +548,7 @@ PARSER.add_argument( "--html-template", "-html", nargs=1, dest="html", default="
 # PARSER.add_argument( "--list-html-tags", "-tags", nargs=1, dest="html", default="", type=str, help="Show a list of pynav html tags")
 
 # Parse arguments
-DEBUG = True
+DEBUG = False
 if DEBUG:
     # DEBUG
     pynav_args = ["--verbose", "--zip", "--flush", "-q", "1", "-ow", "-index", "E:\Dropbox\github\pynav\psd-project"]
