@@ -68,9 +68,10 @@ import zipfile
 import re
 import imghdr
 import struct
+import platform
 import json
 
-
+# Defines
 SCRIPT_FILE_PATH = os.path.realpath(__file__)
 SCRIPT_DIR_PATH = os.path.dirname(SCRIPT_FILE_PATH)
 CONFIG_DIR_PATH = os.path.join(SCRIPT_DIR_PATH, "pynav-conf")
@@ -79,7 +80,7 @@ DESKTOP_HTML_SHEET = os.path.join(CONFIG_DIR_PATH, "pynav-desktop.html")
 MOBILE_HTML_SHEET = os.path.join(CONFIG_DIR_PATH, "pynav-mobile.html")
 INDEX_HTML_SHEET = os.path.join(CONFIG_DIR_PATH, "pynav-index.html")
 INDEX_PAGE_NAME = "index.html"
-
+OS = platform.system()
 
 def errprint(msg):
     """Custom error printing."""
@@ -103,7 +104,7 @@ def get_files_from_folder(folder, image_format):
     try:
         return [ os.path.join(folder, file) for file in os.listdir(folder) if os.path.isfile(os.path.join(folder, file)) and file[-3:] == image_format]
     except:
-        errprint("No existen archivos tipo {0} en el directorio {1}".format(image_format, folder))     
+        errprint("No existen archivos tipo {0} en el directorio {1}".format(image_format, folder))
 
 def shift(seq, n):
     """Shifts list items by n."""
@@ -186,7 +187,7 @@ def pynav(src, dst, quality, input, output, mobile, title, overwrite, index, sli
     if not dst: dst = os.path.join(src, "Pynav_{0}".format(time.strftime("%Y-%m-%d")))
 
     # Get src files
-    source_files = get_files_from_folder(src, input)        
+    source_files = get_files_from_folder(src, input)
 
     # Create dst directory if not exists
     if not os.path.exists(dst):
@@ -263,7 +264,7 @@ def pynav(src, dst, quality, input, output, mobile, title, overwrite, index, sli
 
                     # generate crop for convert app
                     crop = '{0}x{1}+{2}+{3}'.format(int(width), int(new_slice_size), 0, int(slcs * slice))
-                    
+
                     # hack adding [0] suffix to flat psd when call to convert app
                     if input == "psd":
                         convertFile = "{0}[0]".format(in_file)
@@ -271,7 +272,7 @@ def pynav(src, dst, quality, input, output, mobile, title, overwrite, index, sli
                         convertFile = in_file
 
                     # call to convert app
-                    subprocess.call([settings["convert_app"], '-quality', quality, convertFile, '-crop', crop, ofile], shell=True)
+                    subprocess.call([settings["convert_app"], '-quality', quality, convertFile, '-crop', crop, ofile], shell=False)
 
                     # Generate html img tags to include into html file
                     slice_images.append(os.path.basename(ofile))
@@ -363,9 +364,14 @@ desktop_HTML_tmpl = load_template(DESKTOP_HTML_SHEET)
 mobile_HTML_tmpl = load_template(MOBILE_HTML_SHEET)
 
 # Fill user settings with some default
+if OS == "Darwin":
+    convert_app_command = "convert"
+    print("OK")
+else:
+    convert_app_command = "C:/Program Files/Adobe/Adobe Photoshop CC (64 Bit)/convert.exe"
+
 settings = {
-        "convert_app": "C:/Program Files/Adobe/Adobe Photoshop CC (64 Bit)/convert.exe",
-        # "convert_app":"convert",
+        "convert_app":convert_app_command,
         "dir_name": "Pynav_"
 }
 
